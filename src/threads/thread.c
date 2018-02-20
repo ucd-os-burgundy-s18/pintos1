@@ -351,6 +351,9 @@ void
 thread_set_nice (int nice UNUSED) 
 {
   /* Not yet implemented. */
+  // Get current thread
+  struct thread *cur = thread_current ();
+  
 }
 
 /* Returns the current thread's nice value. */
@@ -358,6 +361,9 @@ int
 thread_get_nice (void) 
 {
   /* Not yet implemented. */
+  // Get current thread
+  struct thread *cur = thread_current ();
+
   return 0;
 }
 

@@ -1,0 +1,5 @@
+
+
+add nice to thread struct
+enumerate nice values
+get/set nice
