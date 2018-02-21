@@ -15,36 +15,30 @@
 #define FXRL_30_OF_60 8192         /* 30/60*(2**14) */
 
 
-typedef struct fxrl 
-{
-  /* Probably it will be better to implement this off magnitude alone */
-  /* Negative remainders make the not happy */
-  bool isnegative;
-  int32_t p;
-  int32_t q;
-} fixedreal;
+typedef int32_t fixedreal_t;
 
 
 /* Be sure to cast int to (int32_t) */ 
-int64_t pow (int32_t, int32_t);
+int64_t power (int32_t, int32_t);
 
-fixedreal fxrl_conv_int32_fxrl (int32_t);
+fixedreal_t fxrl_conv_int32_fxrl (int32_t);
 
-int32_t fxrl_conv_fxrl_int32_rd_0 (fixedreal);
-int32_t fxrl_conv_fxrl_int32_rd_near (fixedreal);
+int32_t fxrl_conv_fxrl_int32_rd_0 (fixedreal_t);
+int32_t fxrl_conv_fxrl_int32_rd_near (fixedreal_t);
 
 
-fixedreal fxrl_x_plus_y (fixedreal, fixedreal);
-fixedreal fxrl_x_plus_n (fixedreal, int32_t);
+fixedreal_t fxrl_x_plus_y (fixedreal_t, fixedreal_t);
+fixedreal_t fxrl_x_plus_n (fixedreal_t, int32_t);
 
-fixedreal fxrl_x_minus_y (fixedreal, fixedreal);
-fixedreal fxrl_x_minus_n (fixedreal, int32_t);
+fixedreal_t fxrl_x_minus_y (fixedreal_t, fixedreal_t);
+fixedreal_t fxrl_x_minus_n (fixedreal_t, int32_t);
 
-fixedreal fxrl_x_times_y (fixedreal, fixedreal);
-fixedreal fxrl_x_times_n (fixedreal, int32_t);
+fixedreal_t fxrl_x_times_y (fixedreal_t, fixedreal_t);
+fixedreal_t fxrl_x_times_n (fixedreal_t, int32_t);
 
-fixedreal fxrl_x_div_by_y (fixedreal, fixedreal);
-fixedreal fxrl_x_div_by_n (fixedreal, int32_t);
+fixedreal_t fxrl_x_div_by_y (fixedreal_t, fixedreal_t);
+fixedreal_t fxrl_x_div_by_n (fixedreal_t, int32_t);
 
+void test_math();
 
 #endif /* threads/fixed-point.h */

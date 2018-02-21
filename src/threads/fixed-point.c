@@ -1,9 +1,11 @@
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
+#include <inttypes.h>
 #include "threads/fixed-point.h"
 
 /* x**exp that will fit in int32 */
-int64_t pow (int32_t x, int32_t exp)
+int64_t power (int32_t x, int32_t exp)
 {
   int64_t newvar = 1;
   
@@ -14,97 +16,87 @@ int64_t pow (int32_t x, int32_t exp)
 }
 
 /* Convert n to fixed point:	n * f */
-fixedreal fxrl_conv_int32_fxrl (int32_t n)
+fixedreal_t fxrl_conv_int32_fxrl (int32_t n)
 {
-  fixedreal newvar;
   int32_t f = FXRL_Q_MAX;
-  newvar.p = (int32_t) ((int64_t)n * (int64_t)f);
-  newvar.q = FXRL_Q_MAX;
-  return newvar;
+  return (int32_t) ((int64_t)n * f);
 }
 
 /* Convert x to integer (rounding toward zero):	x / f */
-int32_t fxrl_conv_fxrl_int32_rd_0 (fixedreal x)
+int32_t fxrl_conv_fxrl_int32_rd_0 (fixedreal_t x)
 {
-  int64_t f = pow(2, x.q);
-  return  (int32_t) ((int64_t)x.p / f);
+  int64_t f = FXRL_Q_MAX;
+  return  (int32_t) ((int64_t)x / f);
 
 }
 
 /* Convert x to integer (rounding to nearest):	*/
 /* (x + f / 2) / f  if  x >= 0 */
 /* (x - f / 2) / f  if  x <= 0 */
-int32_t fxrl_conv_fxrl_int32_rd_near (fixedreal x)
+int32_t fxrl_conv_fxrl_int32_rd_near (fixedreal_t x)
 {
-  int64_t f = pow(2, x.q);
+  int64_t f = FXRL_Q_MAX;
 
-  if (x.isnegative)
-    return (int32_t) (-1 * (((int64_t)x.p + (f/2)) / f));
+  if (x < 0)
+    return (int32_t) (((int64_t)x + (f/2)) / f);
   else
-    return (int32_t) (((int64_t)x.p - (f/2)) / f);
+    return (int32_t) (((int64_t)x - (f/2)) / f);
 }
 
-fixedreal fxrl_x_plus_y (fixedreal x, fixedreal y)
-{
-  fixedreal newvar;
 
-  return newvar;
+fixedreal_t fxrl_x_plus_y (fixedreal_t x, fixedreal_t y)
+{
+  return (x + y);
 }
 
-fixedreal fxrl_x_plus_n (fixedreal x, int32_t n)
+fixedreal_t fxrl_x_plus_n (fixedreal_t x, int32_t n)
 {
-  fixedreal newvar;
-  
-  
-  if (n < 0)
-  {
-    newvar.isnegative = true;
-    n *= -1;
-  }
-
-  newvar.p = x.p + n;
-  return newvar;
+  int32_t f = FXRL_Q_MAX;
+  return (x + (n * f));
 }
 
-fixedreal fxrl_x_minus_y (fixedreal x, fixedreal y)
+fixedreal_t fxrl_x_minus_y (fixedreal_t x, fixedreal_t y)
 {
-  fixedreal newvar;
-
-  return newvar;
+  return (x - y);
 }
 
-fixedreal fxrl_x_minus_n (fixedreal x, int32_t n)
+fixedreal_t fxrl_x_minus_n (fixedreal_t x, int32_t n)
 {
-  fixedreal newvar;
-
-  return newvar;
+  int32_t f = FXRL_Q_MAX;
+  return (x - (n * f));
 }
 
-fixedreal fxrl_x_times_y (fixedreal x, fixedreal y)
+fixedreal_t fxrl_x_times_y (fixedreal_t x, fixedreal_t y)
 {
-  fixedreal newvar;
-
-  return newvar;
+  int32_t f = FXRL_Q_MAX;
+  return ((int64_t) x) * y / f;
 }
 
-fixedreal fxrl_x_times_n (fixedreal x, int32_t n)
+fixedreal_t fxrl_x_times_n (fixedreal_t x, int32_t n)
 {
-  fixedreal newvar;
-
-  return newvar;
+  return (x * n);
 }
 
-fixedreal fxrl_x_div_by_y (fixedreal x, fixedreal y)
+fixedreal_t fxrl_x_div_by_y (fixedreal_t x, fixedreal_t y)
 {
-  fixedreal newvar;
-
-  return newvar;
+  int32_t f = FXRL_Q_MAX;
+  return ((int64_t) x) * f / y;
 }
 
-fixedreal fxrl_x_div_by_n (fixedreal x, int32_t y)
+fixedreal_t fxrl_x_div_by_n (fixedreal_t x, int32_t n)
 {
-  fixedreal newvar;
+  return (x / n);
+}
 
-  return newvar;
+
+void test_math()
+{
+  printf ("DEBUG:  Adding 2 + 3 = %"PRId32" \n",  
+      fxrl_conv_fxrl_int32_rd_0(fxrl_x_plus_n(fxrl_conv_int32_fxrl(2), 3)));
+      
+  printf ("DEBUG:  Adding 4 + 5 = %"PRId64" \n", (int64_t) 
+      fxrl_conv_fxrl_int32_rd_0(fxrl_x_plus_y(fxrl_conv_int32_fxrl(4), fxrl_conv_int32_fxrl(5))));
+      
+      
 }
 

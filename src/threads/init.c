@@ -22,6 +22,7 @@
 #include "threads/palloc.h"
 #include "threads/pte.h"
 #include "threads/thread.h"
+#include "threads/fixed-point.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #include "userprog/exception.h"
@@ -129,6 +130,9 @@ main (void)
 
   printf ("Boot complete.\n");
   
+  /* Run custom driver */
+  test_math();
+
   /* Run actions specified on kernel command line. */
   run_actions (argv);
 
