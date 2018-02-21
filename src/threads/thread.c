@@ -380,6 +380,18 @@ thread_get_load_avg (void)
   return (int)100 * load_avg;
 }
 
+/* Recalculates system load average */
+int
+thread_recalc_load_avg (void) 
+{
+  /* This is ultimately called by the timer interrupt */
+  /* Formula:  load_avg = (59/60)*load_avg + (1/60)*ready_threads */
+
+
+  /* Return current load average */
+  return (int)100 * load_avg;
+}
+
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
