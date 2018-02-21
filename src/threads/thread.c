@@ -377,8 +377,7 @@ thread_get_nice (void)
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return (int)100 * load_avg;
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */

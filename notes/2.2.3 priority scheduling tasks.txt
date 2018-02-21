@@ -1,10 +1,17 @@
 
+CHANGELOG / ORDERED TASKS
 
 
 add nice to thread struct
 enumerate nice values
+
 add recent_cpu to thread struct
-add static load_avg and init 0 in thread_init()
+
+add static load_avg
+init 0 in thread_init()
+implement thread_get_load_avg()
+
+
 
 
 ----------------
