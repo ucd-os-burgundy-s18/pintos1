@@ -46,9 +46,9 @@ echo ""
 echo ""
 echo "PASS/FAIL TEST:   pintos run alarm-single"
 echo ""
-pintos -v -k -T 60 --qemu  -- -q  run alarm-single < /dev/null 2> tests/threads/alarm-single.errors |tee tests/threads/alarm-single.output
+#pintos -v -k -T 60 --qemu  -- -q  run alarm-single < /dev/null 2> tests/threads/alarm-single.errors |tee tests/threads/alarm-single.output
 echo ""
-perl -I../.. ../../tests/threads/alarm-single.ck tests/threads/alarm-single tests/threads/alarm-single.result
+#perl -I../.. ../../tests/threads/alarm-single.ck tests/threads/alarm-single tests/threads/alarm-single.result
 
 
 echo ""
@@ -56,9 +56,9 @@ echo ""
 echo ""
 echo "PASS/FAIL TEST:   pintos run alarm-multiple"
 echo ""
-pintos -v -k -T 60 --qemu  -- -q  run alarm-multiple < /dev/null 2> tests/threads/alarm-multiple.errors |tee tests/threads/alarm-multiple.output
+#pintos -v -k -T 60 --qemu  -- -q  run alarm-multiple < /dev/null 2> tests/threads/alarm-multiple.errors |tee tests/threads/alarm-multiple.output
 echo ""
-perl -I../.. ../../tests/threads/alarm-multiple.ck tests/threads/alarm-multiple tests/threads/alarm-multiple.result
+#perl -I../.. ../../tests/threads/alarm-multiple.ck tests/threads/alarm-multiple tests/threads/alarm-multiple.result
 
 
 echo ""
@@ -66,9 +66,9 @@ echo ""
 echo ""
 echo "PASS/FAIL TEST:   pintos run alarm-simultaneous"
 echo ""
-pintos -v -k -T 60 --qemu  -- -q  run alarm-simultaneous < /dev/null 2> tests/threads/alarm-simultaneous.errors |tee tests/threads/alarm-simultaneous.output
+#pintos -v -k -T 60 --qemu  -- -q  run alarm-simultaneous < /dev/null 2> tests/threads/alarm-simultaneous.errors |tee tests/threads/alarm-simultaneous.output
 echo ""
-perl -I../.. ../../tests/threads/alarm-simultaneous.ck tests/threads/alarm-simultaneous tests/threads/alarm-simultaneous.result
+#perl -I../.. ../../tests/threads/alarm-simultaneous.ck tests/threads/alarm-simultaneous tests/threads/alarm-simultaneous.result
 
 
 echo ""
@@ -306,9 +306,9 @@ echo ""
 echo ""
 echo "PASS/FAIL TEST:   pintos run mlfqs-block"
 echo ""
-pintos -v -k -T 480 --qemu  -- -q -mlfqs run mlfqs-block < /dev/null 2> tests/threads/mlfqs-block.errors |tee tests/threads/mlfqs-block.output
+#pintos -v -k -T 480 --qemu  -- -q -mlfqs run mlfqs-block < /dev/null 2> tests/threads/mlfqs-block.errors |tee tests/threads/mlfqs-block.output
 echo ""
-perl -I../.. ../../tests/threads/mlfqs-block.ck tests/threads/mlfqs-block tests/threads/mlfqs-block.result
+#perl -I../.. ../../tests/threads/mlfqs-block.ck tests/threads/mlfqs-block tests/threads/mlfqs-block.result
 
 echo ""
 echo ""
