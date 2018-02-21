@@ -38,9 +38,9 @@ int32_t fxrl_conv_fxrl_int32_rd_near (fixedreal_t x)
   int64_t f = FXRL_Q_MAX;
 
   if (x < 0)
-    return (int32_t) (((int64_t)x + (f/2)) / f);
-  else
     return (int32_t) (((int64_t)x - (f/2)) / f);
+  else
+    return (int32_t) (((int64_t)x + (f/2)) / f);
 }
 
 
@@ -88,15 +88,33 @@ fixedreal_t fxrl_x_div_by_n (fixedreal_t x, int32_t n)
   return (x / n);
 }
 
+fixedreal_t fxrl_x_times_1_60 (fixedreal_t x)
+{
+  return fxrl_x_times_y(x, (fixedreal_t) FXRL_1_OF_60);
+}
+
+fixedreal_t fxrl_x_times_59_60 (fixedreal_t x)
+{
+  return fxrl_x_times_y(x, (fixedreal_t) FXRL_59_OF_60);
+}
+
 
 void test_math()
 {
   printf ("DEBUG:  Adding 2 + 3 = %"PRId32" \n",  
       fxrl_conv_fxrl_int32_rd_0(fxrl_x_plus_n(fxrl_conv_int32_fxrl(2), 3)));
       
-  printf ("DEBUG:  Adding 4 + 5 = %"PRId64" \n", (int64_t) 
+  printf ("DEBUG:  Adding 4 + 5 = %"PRId32" \n",  
       fxrl_conv_fxrl_int32_rd_0(fxrl_x_plus_y(fxrl_conv_int32_fxrl(4), fxrl_conv_int32_fxrl(5))));
       
+  printf ("DEBUG:  Adding 5 - 3 = %"PRId32" \n",
+      fxrl_conv_fxrl_int32_rd_0(fxrl_x_minus_n(fxrl_conv_int32_fxrl(5), 3)));
+      
+  printf ("DEBUG:  Multiply 120 * (1/60) = %"PRId32" \n",
+      fxrl_conv_fxrl_int32_rd_near(fxrl_x_times_1_60 (fxrl_conv_int32_fxrl(120))));
+      
+  printf ("DEBUG:  120 * (59/60) = %"PRId32" \n",
+      fxrl_conv_fxrl_int32_rd_near(fxrl_x_times_59_60(fxrl_conv_int32_fxrl(120))));
       
 }
 
