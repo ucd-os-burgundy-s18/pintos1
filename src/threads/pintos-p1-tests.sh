@@ -106,9 +106,9 @@ echo ""
 echo ""
 echo "PASS/FAIL TEST:   pintos run priority-change"
 echo ""
-#pintos -v -k -T 60 --qemu  -- -q  run priority-change < /dev/null 2> tests/threads/priority-change.errors |tee tests/threads/priority-change.output
+pintos -v -k -T 60 --qemu  -- -q  run priority-change < /dev/null 2> tests/threads/priority-change.errors |tee tests/threads/priority-change.output
 echo ""
-#perl -I../.. ../../tests/threads/priority-change.ck tests/threads/priority-change tests/threads/priority-change.result
+perl -I../.. ../../tests/threads/priority-change.ck tests/threads/priority-change tests/threads/priority-change.result
 
 
 echo ""
