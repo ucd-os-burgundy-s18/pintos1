@@ -55,6 +55,9 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
+/* Load average - NOTE: thread_get_load_avg() returns type int. */
+static int load_avg;            /* Average number of ready over past minute. */
+
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
@@ -89,6 +92,9 @@ void
 thread_init (void) 
 {
   ASSERT (intr_get_level () == INTR_OFF);
+  
+  /* Init load_avg to 0 here. */
+  load_avg = 0;
 
   lock_init (&tid_lock);
   list_init (&ready_list);
@@ -380,6 +386,9 @@ int
 thread_get_recent_cpu (void) 
 {
   /* Not yet implemented. */
+  // Get current thread
+  struct thread *cur = thread_current ();
+
   return 0;
 }
 

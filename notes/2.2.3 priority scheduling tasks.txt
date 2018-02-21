@@ -1,5 +1,33 @@
 
 
+
 add nice to thread struct
 enumerate nice values
+add recent_cpu to thread struct
+add static load_avg and init 0 in thread_init()
+
+
+----------------
+
+
 get/set nice
+  "The initial thread starts with a nice value of zero. Other threads start with a nice value inherited from their parent thread."
+  
+  
+  
+get/recalc recent_cpu
+  The initial value of recent_cpu is 0 in the first thread created, or the parent's value in other new threads. 
+  Each time a timer interrupt occurs, recent_cpu is incremented by 1 for the running thread only, unless the idle thread is running. 
+  In addition, once per second the value of recent_cpu is recalculated for every thread (whether running, ready, or blocked), using this formula:
+
+  recent_cpu = (2*load_avg)/(2*load_avg + 1) * recent_cpu + nice
+  
+  
+  
+get/recalc load_avg
+  At system boot, it is initialized to 0. Once per second thereafter, it is updated according to the following formula:
+
+load_avg = (59/60)*load_avg + (1/60)*ready_threads,
+
+  where ready_threads is the number of threads that are either running or ready to run at time of update (not including the idle thread).
+  Because of assumptions made by some of the tests, load_avg must be updated exactly when the system tick counter reaches a multiple of a second, that is, when timer_ticks () % TIMER_FREQ == 0, and not at any other time.
