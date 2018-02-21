@@ -3,9 +3,9 @@
 #include "threads/fixed-point.h"
 
 /* x**exp that will fit in int32 */
-int32_t pow (int32_t x, int32_t exp)
+int64_t pow (int32_t x, int32_t exp)
 {
-  int32_t newvar = 1;
+  int64_t newvar = 1;
   
   for (int index = 0; index < exp; ++index)
     newvar *= x;
@@ -18,13 +18,6 @@ fixedreal fxrl_conv_int32_fxrl (int32_t n)
 {
   fixedreal newvar;
   int32_t f = FXRL_Q_MAX;
-
-  if (n < 0)
-  {
-    newvar.isnegative = true;
-    n *= -1;
-  }
-  
   newvar.p = (int32_t) ((int64_t)n * (int64_t)f);
   newvar.q = FXRL_Q_MAX;
   return newvar;
@@ -33,12 +26,8 @@ fixedreal fxrl_conv_int32_fxrl (int32_t n)
 /* Convert x to integer (rounding toward zero):	x / f */
 int32_t fxrl_conv_fxrl_int32_rd_0 (fixedreal x)
 {
-  int64_t f = (int64_t) pow(2, x.q);
-
-  if (x.isnegative)
-    return  (int32_t) (-1 * ((int64_t)x.p / f));
-  else
-    return  (int32_t) ((int64_t)x.p / f);
+  int64_t f = pow(2, x.q);
+  return  (int32_t) ((int64_t)x.p / f);
 
 }
 
@@ -47,7 +36,7 @@ int32_t fxrl_conv_fxrl_int32_rd_0 (fixedreal x)
 /* (x - f / 2) / f  if  x <= 0 */
 int32_t fxrl_conv_fxrl_int32_rd_near (fixedreal x)
 {
-  int64_t f = (int64_t) pow(2, x.q);
+  int64_t f = pow(2, x.q);
 
   if (x.isnegative)
     return (int32_t) (-1 * (((int64_t)x.p + (f/2)) / f));

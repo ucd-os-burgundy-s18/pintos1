@@ -20,13 +20,13 @@ typedef struct fxrl
   /* Probably it will be better to implement this off magnitude alone */
   /* Negative remainders make the not happy */
   bool isnegative;
-  uint32_t p;
-  uint32_t q;
+  int32_t p;
+  int32_t q;
 } fixedreal;
 
 
 /* Be sure to cast int to (int32_t) */ 
-int32_t pow (int32_t, int32_t);
+int64_t pow (int32_t, int32_t);
 
 fixedreal fxrl_conv_int32_fxrl (int32_t);
 
