@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/fixed-point.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -23,6 +24,7 @@
 /* List of processes in THREAD_READY state, that is, processes
    that are ready to run but not actually running. */
 static struct list ready_list;
+static int ready_threads;
 
 /* List of all processes.  Processes are added to this list
    when they are first scheduled and removed when they exit. */
@@ -53,6 +55,9 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 /* Scheduling. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
+
+/* Load average - NOTE: thread_get_load_avg() returns type int. */
+static fixedreal_t load_avg;            /* Average number of ready over past minute. */
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -88,6 +93,9 @@ void
 thread_init (void) 
 {
   ASSERT (intr_get_level () == INTR_OFF);
+  
+  /* Init load_avg to 0 here. */
+  load_avg = 0;
 
   lock_init (&tid_lock);
   list_init (&ready_list);
@@ -98,6 +106,7 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  ready_threads = 1;
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -217,6 +226,7 @@ thread_block (void)
   ASSERT (intr_get_level () == INTR_OFF);
 
   thread_current ()->status = THREAD_BLOCKED;
+  --ready_threads;
   schedule ();
 }
 
@@ -239,6 +249,7 @@ thread_unblock (struct thread *t)
   ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
+  ++ready_threads;
   intr_set_level (old_level);
 }
 
@@ -292,6 +303,7 @@ thread_exit (void)
   intr_disable ();
   list_remove (&thread_current()->allelem);
   thread_current ()->status = THREAD_DYING;
+  --ready_threads;
   schedule ();
   NOT_REACHED ();
 }
@@ -350,6 +362,9 @@ void
 thread_set_nice (int nice UNUSED) 
 {
   /* Not yet implemented. */
+  // Get current thread
+  struct thread *cur = thread_current ();
+  
 }
 
 /* Returns the current thread's nice value. */
@@ -357,15 +372,29 @@ int
 thread_get_nice (void) 
 {
   /* Not yet implemented. */
+  // Get current thread
+  struct thread *cur = thread_current ();
+
   return 0;
 }
 
 /* Returns 100 times the system load average. */
+
 int
 thread_get_load_avg (void) 
 {
-  /* Not yet implemented. */
-  return 0;
+  return (int) fxrl_to_int32_near( fxrl_x_times_n(load_avg, 100) );
+}
+
+/* Recalculates system load average */
+void
+thread_recalc_load_avg (void) 
+{
+  /* This is ultimately called by the timer interrupt */
+  /* Formula:  load_avg = (59/60)*load_avg + (1/60)*ready_threads */
+  
+  load_avg = fxrl_x_plus_y (fxrl_x_times_59_60(load_avg), 
+                            fxrl_from_int32_times_1_60(ready_threads));
 }
 
 /* Returns 100 times the current thread's recent_cpu value. */
@@ -373,6 +402,9 @@ int
 thread_get_recent_cpu (void) 
 {
   /* Not yet implemented. */
+  // Get current thread
+  struct thread *cur = thread_current ();
+
   return 0;
 }
 
