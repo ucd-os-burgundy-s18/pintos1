@@ -95,7 +95,7 @@ thread_init (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
   
-  /* Init load_avg to 0 here. */
+  /* Init load_avg and recent_cpu to 0 here. */
   load_avg = 0;
 
   lock_init (&tid_lock);
@@ -104,6 +104,7 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
+  initial_thread->recent_cpu = 0;
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
@@ -420,7 +421,7 @@ thread_get_recent_cpu (void)
 
   return 0;
 }
-
+
 /* Idle thread.  Executes when no other thread is ready to run.
 
    The idle thread is initially put on the ready list by
@@ -507,6 +508,7 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
+  t->recent_cpu = running_thread()->recent_cpu;
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();
