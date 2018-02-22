@@ -25,6 +25,14 @@ thread_yield NOT SURE
 implemented thread_get_load_avg()
 implemented thread_recalc_load_avg())
 
+removed static tracking of ready threads
+add thread_get_ready_threads ()
+  backup interrupt state
+  disable interrupts
+  get size of ready list
+  if current thread != idle add 1
+  restore 
+
 
 ----------------
 

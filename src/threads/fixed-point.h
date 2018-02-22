@@ -44,6 +44,6 @@ fixedreal_t fxrl_from_int32_times_1_60 (int32_t);
 fixedreal_t fxrl_x_times_59_60 (fixedreal_t);
 
 /* Math test driver */
-void test_math();
+void test_math(void);
 
 #endif /* threads/fixed-point.h */

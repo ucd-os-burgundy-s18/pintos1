@@ -165,13 +165,37 @@ timer_print_stats (void)
 {
   printf ("Timer: %"PRId64" ticks\n", timer_ticks ());
 }
-
+
 /* Timer interrupt handler. */
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+  int64_t current_ticks = timer_ticks();
+
+  /* CRITICAL SECTION: */
+  /* Do stuff with interrupts disabled */
+  enum intr_level old_level;
+  old_level = intr_disable ();
+  { 
+    /* Recalculate ready_threads and load_avg */
+    if (current_ticks % TIMER_FREQ == 0)
+    {
+      thread_recalc_load_avg();
+    }
+   
+    /* Recalculate current thread's priority */
+    if (current_ticks % TIMER_PRI_RECALC_FREQ == 0)
+    {
+      thread_recalc_priority();
+      /* If a thread on the ready list has higher priority that this thread it must yield immediately */
+      // IMPLEMENT THIS HERE
+    }
+  }  
+
+  /* END CRITICAL SECTION */
+  intr_set_level (old_level);
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
