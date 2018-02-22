@@ -21,10 +21,10 @@ typedef int32_t fixedreal_t;
 /* Be sure to cast int to (int32_t) */ 
 int64_t power (int32_t, int32_t);
 
-fixedreal_t fxrl_conv_int32_fxrl (int32_t);
+fixedreal_t fxrl_from_int32 (int32_t);
 
-int32_t fxrl_conv_fxrl_int32_rd_0 (fixedreal_t);
-int32_t fxrl_conv_fxrl_int32_rd_near (fixedreal_t);
+int32_t fxrl_to_int32 (fixedreal_t);
+int32_t fxrl_to_int32_near (fixedreal_t);
 
 
 fixedreal_t fxrl_x_plus_y (fixedreal_t, fixedreal_t);
@@ -40,7 +40,7 @@ fixedreal_t fxrl_x_div_by_y (fixedreal_t, fixedreal_t);
 fixedreal_t fxrl_x_div_by_n (fixedreal_t, int32_t);
 
 /* Special multiply specific values */ 
-fixedreal_t fxrl_x_times_1_60 (fixedreal_t);
+fixedreal_t fxrl_from_int32_times_1_60 (int32_t);
 fixedreal_t fxrl_x_times_59_60 (fixedreal_t);
 
 /* Math test driver */

@@ -7,11 +7,23 @@ enumerate nice values
 
 add recent_cpu to thread struct
 
-add static load_avg
+add static fixedreal_t load_avg
 init 0 in thread_init()
-implement thread_get_load_avg()
 
+implemented fixed point math
 
+add static int ready_threads
+init 1 in thread_init()
+
+implement correct updating of ready_threads
+thread_init 1
+thread_block --
+thread_unblock ++
+thread_exit --
+thread_yield NOT SURE
+
+implemented thread_get_load_avg()
+implemented thread_recalc_load_avg())
 
 
 ----------------
