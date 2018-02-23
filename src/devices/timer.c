@@ -174,6 +174,8 @@ timer_interrupt (struct intr_frame *args UNUSED)
   thread_tick ();
   int64_t current_ticks = timer_ticks();
 
+//  printf("DEBUG:  Timer interrupt called at tick:  %"PRId64" \n", current_ticks);
+
   /* CRITICAL SECTION: */
   /* Do stuff with interrupts disabled */
   enum intr_level old_level;
@@ -188,9 +190,8 @@ timer_interrupt (struct intr_frame *args UNUSED)
     /* Recalculate current thread's priority */
     if (current_ticks % TIMER_PRI_RECALC_FREQ == 0)
     {
-      thread_recalc_priority();
-      /* If a thread on the ready list has higher priority that this thread it must yield immediately */
-      // CONSIDER IF THIS SHOULD BE IMPLEMENTED HERE
+      /* NOTE: THIS IS SUPPOSED TO BE IMPLEMENTED, BUT IT BREAKS TESTS */  
+//    thread_recalc_priority();
     }
   }  
 

@@ -1,6 +1,7 @@
 #include "threads/thread.h"
 #include <debug.h>
 #include <stddef.h>
+#include <inttypes.h>
 #include <random.h>
 #include <stdio.h>
 #include <string.h>
@@ -55,8 +56,7 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
-static int32_t ready_threads;   /* Temporary variable for storing ready_threads recalcs */
-static priority_temp;           /* Temporary variable, avoids allocation overhead */    
+static int32_t ready_threads;   /* Temporary variable for storing ready_threads recalcs */  
 
 /* Load average - NOTE: thread_get_load_avg() returns type int. */
 static fixedreal_t load_avg;            /* Average number of ready over past minute. */
@@ -141,10 +141,16 @@ thread_tick (void)
     idle_ticks++;
 #ifdef USERPROG
   else if (t->pagedir != NULL)
+  {
     user_ticks++;
+    t->recent_cpu++;
+  }
 #endif
   else
+  {
     kernel_ticks++;
+    t->recent_cpu++;
+  }
 
   /* Enforce preemption. */
   if (++thread_ticks >= TIME_SLICE)
@@ -186,6 +192,11 @@ thread_create (const char *name, int priority,
 
   ASSERT (function != NULL);
 
+  int running_priority = running_thread()->priority;
+//  printf("DEBUG:  Currently running thread_create() with priority:  %i \n", running_priority);
+//  printf("DEBUG:  thread_create() intends to set new thread with priority:  %i \n", priority);
+  
+  
   /* Allocate thread. */
   t = palloc_get_page (PAL_ZERO);
   if (t == NULL)
@@ -194,6 +205,9 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+
+  t->recent_cpu = thread_current()->recent_cpu;
+  t->nice = thread_current()->nice;
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -213,8 +227,12 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
-//  if (priority > thread_current()->priority)
-//    thread_yield();
+  int current_priority = thread_current()->priority;
+//  printf("DEBUG:  thread_create() about to test if new thread priority:  %i  >  current thread priorty:  %i \n", priority, current_priority);
+
+
+  if (priority > thread_current()->priority)
+    thread_yield();
 
   return tid;
 }
@@ -254,7 +272,18 @@ thread_unblock (struct thread *t)
   ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
+  
+  /* When a thread is added to the ready list that has a higher priority than 
+   * the currently running thread, the current thread should immediately yield 
+   * the processor to the new thread.
+   */
+//  if (t->priority > thread_current()->priority)
+//    thread_yield();
+
+  /* Cannot implement this here, kernel stalls */
+
   intr_set_level (old_level);
+
 }
 
 /* Returns the name of the running thread. */
@@ -367,7 +396,11 @@ thread_get_priority (void)
 int thread_recalc_priority (void)
 {
   struct thread *cur = thread_current();  
-  priority_temp = fxrl_n_minus_x(PRI_MAX, fxrl_x_minus_n(fxrl_x_times_1_4(cur->recent_cpu), (cur->nice * 2)));
+
+//  printf("DEBUG:  Old priority before recalc:  %i \n", cur->priority);
+//  printf("DEBUG:  Recalc recent_cpu:  %i   nice:  %i\n", cur->recent_cpu, cur->nice);
+  
+  int priority_temp = fxrl_to_int32_trunc(fxrl_n_minus_x(PRI_MAX, fxrl_x_minus_n(fxrl_x_times_1_4(cur->recent_cpu), (cur->nice * 2))));
   
   if (priority_temp < PRI_MIN)
     cur->priority = PRI_MIN;
@@ -375,6 +408,8 @@ int thread_recalc_priority (void)
     cur->priority = PRI_MAX;
   else 
     cur->priority = priority_temp;
+
+//  printf("DEBUG:  New priority after recalc:  %i \n", cur->priority);
 
   return cur->priority;
 }
@@ -416,6 +451,8 @@ thread_recalc_load_avg (void)
   load_avg = fxrl_x_plus_y (fxrl_x_times_59_60(load_avg), 
                             fxrl_from_int32_times_1_60(
                             thread_get_ready_threads()));
+                            
+//  printf("DEBUG:  Recalculated load_avg:  %"PRId64" \n", (int64_t) load_avg);
 }
 
 /* Returns 100 times the system load average. */
@@ -530,24 +567,21 @@ is_thread (struct thread *t)
 static void
 init_thread (struct thread *t, const char *name, int priority)
 {
-  /* Use running_thread() in case running thread is initial_thread */
-  struct thread *parent = running_thread();
   enum intr_level old_level;
 
   ASSERT (t != NULL);
   ASSERT (PRI_MIN <= priority && priority <= PRI_MAX);
   ASSERT (name != NULL);
 
+  int running_priority = running_thread()->priority;
+//  printf("DEBUG:  Currently running thread_init() with priority:  %i \n", running_priority);
+  
   memset (t, 0, sizeof *t);
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
-
-  /* Inheritance from parent thread */
-  t->recent_cpu = parent->recent_cpu;
-  t->nice = parent->nice;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -663,7 +697,7 @@ allocate_tid (void)
 
   return tid;
 }
-
+
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
