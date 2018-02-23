@@ -20,11 +20,11 @@
 #define FXRL_100_N 1638400              /* 100*(2**14) */
 #define FXRL_1_OF_4 4096                /* (1/4)*(2**14) */
 
-/* Don't use int32_t */
-// typedef int32_t fixedreal_t;
+/* Use int32_t */
+typedef int32_t fixedreal_t;
 
-/* Use int64_t instead */
-typedef int64_t fixedreal_t;
+/* Don't use int64_t instead */
+// typedef int64_t fixedreal_t;
 
 /* Be sure to cast int to (int32_t) */ 
 int64_t power (int32_t, int32_t);
