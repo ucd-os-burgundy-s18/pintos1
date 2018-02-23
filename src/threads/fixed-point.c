@@ -18,16 +18,13 @@ int64_t power (int32_t x, int32_t exp)
 /* Convert n to fixed point:	n * f */
 fixedreal_t fxrl_from_int32 (int32_t n)
 {
-  int32_t f = FXRL_Q_MAX;
-  return (int32_t) ((int64_t)n * f);
+  return ((int64_t)n * FXRL_F);
 }
 
 /* Convert x to integer (rounding toward zero):	x / f */
 int32_t fxrl_to_int32_trunc (fixedreal_t x)
 {
-  int64_t f = FXRL_Q_MAX;
-  return  (int32_t) ((int64_t)x / f);
-
+  return  (int32_t) (x / FXRL_F);
 }
 
 /* Convert x to integer (rounding to nearest):	*/
@@ -35,12 +32,10 @@ int32_t fxrl_to_int32_trunc (fixedreal_t x)
 /* (x - f / 2) / f  if  x <= 0 */
 int32_t fxrl_to_int32_near (fixedreal_t x)
 {
-  int64_t f = FXRL_Q_MAX;
-
   if (x < 0)
-    return (int32_t) (((int64_t)x - (f/2)) / f);
+    return (int32_t) ((x - (FXRL_F / 2)) / FXRL_F);
   else
-    return (int32_t) (((int64_t)x + (f/2)) / f);
+    return (int32_t) ((x + (FXRL_F / 2)) / FXRL_F);
 }
 
 fixedreal_t fxrl_x_plus_y (fixedreal_t x, fixedreal_t y)
@@ -50,8 +45,7 @@ fixedreal_t fxrl_x_plus_y (fixedreal_t x, fixedreal_t y)
 
 fixedreal_t fxrl_x_plus_n (fixedreal_t x, int32_t n)
 {
-  int32_t f = FXRL_Q_MAX;
-  return (x + (n * f));
+  return (x + ((int64_t) n * FXRL_F));
 }
 
 fixedreal_t fxrl_x_minus_y (fixedreal_t x, fixedreal_t y)
@@ -61,42 +55,58 @@ fixedreal_t fxrl_x_minus_y (fixedreal_t x, fixedreal_t y)
 
 fixedreal_t fxrl_x_minus_n (fixedreal_t x, int32_t n)
 {
-  int32_t f = FXRL_Q_MAX;
-  return (x - (n * f));
+  return (x - ((int64_t) n * FXRL_F));
+}
+
+fixedreal_t fxrl_n_minus_x (int32_t n, fixedreal_t x)
+{
+  return (((int64_t) n * FXRL_F) - x);
 }
 
 fixedreal_t fxrl_x_times_y (fixedreal_t x, fixedreal_t y)
 {
-  int32_t f = FXRL_Q_MAX;
-  return ((int64_t) x) * y / f;
+  return ((x * y) / FXRL_F);
 }
 
 fixedreal_t fxrl_x_times_n (fixedreal_t x, int32_t n)
 {
-  return (x * n);
+  return (x * (int64_t) n);
 }
 
 fixedreal_t fxrl_x_div_by_y (fixedreal_t x, fixedreal_t y)
 {
-  int32_t f = FXRL_Q_MAX;
-  return ((int64_t) x) * f / y;
+  return ((x * FXRL_F) / y);
 }
 
 fixedreal_t fxrl_x_div_by_n (fixedreal_t x, int32_t n)
 {
-  return (x / n);
+  return (x / (int64_t) n);
 }
 
 fixedreal_t fxrl_from_int32_times_1_60 (int32_t n)
 {
-  return fxrl_x_times_n((fixedreal_t) FXRL_1_OF_60, n);
+  return ((fixedreal_t) FXRL_1_OF_60 * (int64_t) n);
 }
 
 fixedreal_t fxrl_x_times_59_60 (fixedreal_t x)
 {
-  return fxrl_x_times_y(x, (fixedreal_t) FXRL_59_OF_60);
+  return ((x * FXRL_59_OF_60) / FXRL_F);
 }
 
+fixedreal_t fxrl_2x (fixedreal_t x)
+{
+  return (x * FXRL_2_N);
+}
+
+fixedreal_t fxrl_100x (fixedreal_t x)
+{
+  return (x * FXRL_100_N);
+}
+
+fixedreal_t fxrl_x_times_1_4 (fixedreal_t x)
+{
+  return ((x * FXRL_1_OF_4) / FXRL_F);
+}
 
 void test_math()
 {
@@ -116,4 +126,3 @@ void test_math()
       fxrl_to_int32_near(fxrl_x_times_59_60(fxrl_from_int32(120))));
       
 }
-
