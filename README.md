@@ -5,4 +5,4 @@
 
 Please visit the project document (under construction) at:
 
-[https://github.com/ucd-os-burgundy-s18/pintos1/DOC_P1.md](https://github.com/ucd-os-burgundy-s18/pintos1/DOC_P1.md) 
+[https://github.com/ucd-os-burgundy-s18/pintos1/blob/master/DOC_P1.md](https://github.com/ucd-os-burgundy-s18/pintos1/blob/master/DOC_P1.md)
