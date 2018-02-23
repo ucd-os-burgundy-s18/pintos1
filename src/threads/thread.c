@@ -55,7 +55,8 @@ static long long user_ticks;    /* # of timer ticks in user programs. */
 #define TIME_SLICE 4            /* # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /* # of timer ticks since last yield. */
 
-static int32_t ready_threads;       /* Temporary variable for storing ready_threads recalcs */
+static int32_t ready_threads;   /* Temporary variable for storing ready_threads recalcs */
+static priority_temp;           /* Temporary variable, avoids allocation overhead */    
 
 /* Load average - NOTE: thread_get_load_avg() returns type int. */
 static fixedreal_t load_avg;            /* Average number of ready over past minute. */
@@ -346,7 +347,10 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
+  int old_priority = thread_current()->priority;
   thread_current()->priority = new_priority;
+  if (new_priority < old_priority)
+    thread_yield();
 }
 
 /* Returns the current thread's priority. */
@@ -356,10 +360,20 @@ thread_get_priority (void)
   return thread_current()->priority;
 }
 
+// priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
 int thread_recalc_priority (void)
 {
-  /* Not yet implemented */
-  return thread_current()->priority;
+  struct thread *cur = thread_current();  
+  priority_temp = fxrl_n_minus_x(PRI_MAX, fxrl_x_minus_n(fxrl_x_times_1_4(cur->recent_cpu), (cur->nice * 2)));
+  
+  if (priority_temp < PRI_MIN)
+    cur->priority = PRI_MIN;
+  else if (priority_temp > PRI_MAX)
+    cur->priority = PRI_MAX;
+  else 
+    cur->priority = priority_temp;
+
+  return cur->priority;
 }
 
 
@@ -417,8 +431,6 @@ thread_get_load_avg (void)
 // recent_cpu = fxrl_x_plus_n((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*fxrl_x_times_n(load_avg, 2), (int32_t) nice)
 // recent_cpu = fxrl_x_plus_n(fxrl_x_times_y((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice)
 // recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(recent_cpu, fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice);
-
-
 void 
 thread_recalc_recent_cpu (void)
 {
@@ -488,7 +500,7 @@ kernel_thread (thread_func *function, void *aux)
   function (aux);       /* Execute the thread function. */
   thread_exit ();       /* If function() returns, kill the thread. */
 }
-
+
 /* Returns the running thread. */
 struct thread *
 running_thread (void) 

@@ -190,7 +190,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
     {
       thread_recalc_priority();
       /* If a thread on the ready list has higher priority that this thread it must yield immediately */
-      // IMPLEMENT THIS HERE
+      // CONSIDER IF THIS SHOULD BE IMPLEMENTED HERE
     }
   }  
 

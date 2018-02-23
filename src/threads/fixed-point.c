@@ -58,6 +58,11 @@ fixedreal_t fxrl_x_minus_n (fixedreal_t x, int32_t n)
   return (x - ((int64_t) n * FXRL_F));
 }
 
+fixedreal_t fxrl_n_minus_x (int32_t n, fixedreal_t x)
+{
+  return (((int64_t) n * FXRL_F) - x);
+}
+
 fixedreal_t fxrl_x_times_y (fixedreal_t x, fixedreal_t y)
 {
   return ((x * y) / FXRL_F);

@@ -40,6 +40,7 @@ fixedreal_t fxrl_x_plus_n (fixedreal_t, int32_t);
 
 fixedreal_t fxrl_x_minus_y (fixedreal_t, fixedreal_t);
 fixedreal_t fxrl_x_minus_n (fixedreal_t, int32_t);
+fixedreal_t fxrl_n_minus_x (int32_t, fixedreal_t);
 
 fixedreal_t fxrl_x_times_y (fixedreal_t, fixedreal_t);
 fixedreal_t fxrl_x_times_n (fixedreal_t, int32_t);
