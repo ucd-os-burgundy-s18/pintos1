@@ -144,8 +144,10 @@ int thread_recalc_priority (void);
 int thread_get_nice (void);
 void thread_set_nice (int);
 
-int32_t thread_get_ready_threads (void);
 int thread_get_recent_cpu (void);
+void thread_recalc_recent_cpu (void);
+
+int32_t thread_get_ready_threads (void);
 void thread_recalc_load_avg (void);
 int thread_get_load_avg (void);
 

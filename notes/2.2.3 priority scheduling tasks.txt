@@ -14,13 +14,7 @@ implemented fixed point math
 
 add static int ready_threads
 init 1 in thread_init()
-
 implement correct updating of ready_threads
-thread_init 1
-thread_block --
-thread_unblock ++
-thread_exit --
-thread_yield NOT SURE
 
 implemented thread_get_load_avg()
 implemented thread_recalc_load_avg())
@@ -32,6 +26,25 @@ add thread_get_ready_threads ()
   get size of ready list
   if current thread != idle add 1
   restore 
+
+disabling interrupts moved to timer_interrupt handler
+implemented timer_interrupt to recalc load_avg and priority at specified intervals
+
+thread_init() has:
+  initial_thread->recent_cpu = 0;
+init_thread() has:
+  t->recent_cpu = parent->recent_cpu;
+
+add nice to thread struct
+thread_init() has:
+  initial_thread->nice = NICE_DEFAULT;
+init_thread() has:
+  t->nice = parent->nice;
+
+implemented set and get nice functions
+
+added thread_recalc_recent_cpu()
+
 
 
 ----------------

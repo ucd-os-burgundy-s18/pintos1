@@ -105,6 +105,7 @@ thread_init (void)
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
   initial_thread->recent_cpu = 0;
+  initial_thread->nice = NICE_DEFAULT;
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
@@ -345,45 +346,41 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  thread_current ()->priority = new_priority;
+  thread_current()->priority = new_priority;
 }
 
 /* Returns the current thread's priority. */
 int
 thread_get_priority (void) 
 {
-  return thread_current ()->priority;
+  return thread_current()->priority;
 }
 
 int thread_recalc_priority (void)
 {
+  /* Not yet implemented */
   return thread_current()->priority;
 }
 
 
 /* Sets the current thread's nice value to NICE. */
 void
-thread_set_nice (int nice UNUSED) 
+thread_set_nice (int nice) 
 {
-  /* Not yet implemented. */
-  // Get current thread
-  struct thread *cur = thread_current ();
-  
+  thread_current()->nice = nice;
 }
 
 /* Returns the current thread's nice value. */
 int
 thread_get_nice (void) 
 {
-  /* Not yet implemented. */
   // Get current thread
-  struct thread *cur = thread_current ();
-
-  return 0;
+  return thread_current()->nice;
 }
 
 /* Recalculate ready_threads on demand */
-int32_t thread_get_ready_threads (void)
+int32_t 
+thread_get_ready_threads (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
   ready_threads = list_size(&ready_list);
@@ -396,7 +393,7 @@ int32_t thread_get_ready_threads (void)
 void
 thread_recalc_load_avg (void) 
 {
-  /* This is ultimately called by the timer interrupt */
+  /* This is ONLY called by the timer_interrupt handler */
   /* Formula:  load_avg = (59/60)*load_avg + (1/60)*ready_threads */
   ASSERT (intr_get_level () == INTR_OFF);  
   load_avg = fxrl_x_plus_y (fxrl_x_times_59_60(load_avg), 
@@ -411,15 +408,36 @@ thread_get_load_avg (void)
   return (int) fxrl_to_int32_near( fxrl_x_times_n(load_avg, 100) );
 }
 
+/* Recalculates current thread's recent_cpu value */
+/* recent_cpu = (2*load_avg)/(2*load_avg + 1) * recent_cpu + nice */
+/* (recent_cpu/(2*load_avg + 1))*(2*load_avg) + nice */
+// recent_cpu = ((recent_cpu/((2*load_avg) + 1))*(2*load_avg) + nice)
+// recent_cpu = ((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*(2*load_avg) + nice)
+// recent_cpu = ((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*fxrl_x_times_n(load_avg, 2) + nice)
+// recent_cpu = fxrl_x_plus_n((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*fxrl_x_times_n(load_avg, 2), (int32_t) nice)
+// recent_cpu = fxrl_x_plus_n(fxrl_x_times_y((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice)
+// recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(recent_cpu, fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice);
+
+
+void 
+thread_recalc_recent_cpu (void)
+{
+  ASSERT (intr_get_level () == INTR_OFF); 
+  struct thread *cur = thread_current();
+  
+  cur->recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(cur->recent_cpu, 
+                      fxrl_x_plus_n(fxrl_2x(load_avg), 1)), 
+                      fxrl_2x(load_avg)), (int32_t) cur->nice);
+}
+
 /* Returns 100 times the current thread's recent_cpu value. */
 int
 thread_get_recent_cpu (void) 
 {
   /* Not yet implemented. */
-  // Get current thread
-  struct thread *cur = thread_current ();
+  struct thread *cur = thread_current();
 
-  return 0;
+  return (int) fxrl_to_int32_near(fxrl_100x(cur->recent_cpu));
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
@@ -497,6 +515,8 @@ is_thread (struct thread *t)
 static void
 init_thread (struct thread *t, const char *name, int priority)
 {
+  /* Use running_thread() in case running thread is initial_thread */
+  struct thread *parent = running_thread();
   enum intr_level old_level;
 
   ASSERT (t != NULL);
@@ -508,8 +528,11 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
-  t->recent_cpu = running_thread()->recent_cpu;
   t->magic = THREAD_MAGIC;
+
+  /* Inheritance from parent thread */
+  t->recent_cpu = parent->recent_cpu;
+  t->nice = parent->nice;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
