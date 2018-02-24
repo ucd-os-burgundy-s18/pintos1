@@ -181,17 +181,18 @@ timer_interrupt (struct intr_frame *args UNUSED)
   enum intr_level old_level;
   old_level = intr_disable ();
   { 
-    /* Recalculate ready_threads and load_avg */
+    /* Recalculate ready_threads, load_avg, and every recent_cpu */
     if (current_ticks % TIMER_FREQ == 0)
     {
-      thread_recalc_load_avg();
+      thread_recalc_load_avg();         /* This also recalcs ready_threads */
+      thread_recalc_all_recent_cpu();   /* Recalcs recent_cpu for every thread */
     }
    
-    /* Recalculate current thread's priority */
+    /* Recalculate every thread's priority */
     if (current_ticks % TIMER_PRI_RECALC_FREQ == 0)
     {
-      /* NOTE: THIS IS SUPPOSED TO BE IMPLEMENTED, BUT IT BREAKS TESTS */  
-//    thread_recalc_priority();
+      /* NOTE: THIS IS SUPPOSED TO BE IMPLEMENTED, BUT IT MIGHT BREAK TESTS */  
+      thread_recalc_all_priorities();
     }
   }  
 
