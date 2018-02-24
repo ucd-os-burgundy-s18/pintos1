@@ -172,7 +172,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
-  int64_t current_ticks = timer_ticks();
+   int64_t current_ticks = timer_ticks();
 
 //  printf("DEBUG:  Timer interrupt called at tick:  %"PRId64" \n", current_ticks);
 
@@ -180,6 +180,9 @@ timer_interrupt (struct intr_frame *args UNUSED)
   /* Do stuff with interrupts disabled */
   enum intr_level old_level;
   old_level = intr_disable ();
+  
+  /* MLFQS:  Advanced scheduler recalculations */
+  if (thread_mlfqs)
   { 
     /* Recalculate ready_threads, load_avg, and every recent_cpu */
     if (current_ticks % TIMER_FREQ == 0)
@@ -191,8 +194,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
     /* Recalculate every thread's priority */
     if (current_ticks % TIMER_PRI_RECALC_FREQ == 0)
     {
-      /* NOTE: THIS IS SUPPOSED TO BE IMPLEMENTED, BUT IT MIGHT BREAK TESTS */  
-      thread_recalc_all_priorities();
+      thread_recalc_all_priorities();  /* This recalcs every thread's priority */
     }
   }  
 
