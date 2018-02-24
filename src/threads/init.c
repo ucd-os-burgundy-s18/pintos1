@@ -130,9 +130,6 @@ main (void)
 
   printf ("Boot complete.\n");
   
-  /* Run custom driver */
-//  test_math();
-
   /* Run actions specified on kernel command line. */
   run_actions (argv);
 

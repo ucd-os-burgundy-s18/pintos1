@@ -206,17 +206,14 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
 
-  /* Inheritance from parent thread */
-  t->nice = thread_current()->nice;
-
-  /* CHOOSE ONE: INHERIT recent_cpu FROM PARENT, OR SET NEW THREAD recent_cpu TO 0 */
-  t->recent_cpu = thread_current()->recent_cpu;
-  t->recent_cpu = 0;
-  t->recent_cpu = 0;
-
-  /* DISREGARD priority parameter and recalculate priority now */
-  thread_recalc_priority(t);
-
+  /* MLFQS: Inheritance from parent thread */
+  if (thread_mlfqs)
+  {
+    t->nice = thread_current()->nice;
+    t->recent_cpu = thread_current()->recent_cpu;
+    thread_recalc_priority(t);
+  }
+  
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
   kf->eip = NULL;
@@ -413,15 +410,10 @@ thread_get_priority (void)
 // priority = PRI_MAX - (recent_cpu / 4) - (nice * 2)
 int thread_recalc_priority (struct thread *t)
 {
+  ASSERT(thread_mlfqs);
   int priority_temp = fxrl_to_int32_trunc( fxrl_n_minus_x(PRI_MAX, 
                         fxrl_x_minus_n( fxrl_x_div_by_n(t->recent_cpu, 4), 
                         (t ->nice * 2))));
-// int priority_temp = (PRI_MAX 
-//                      - fxrl_to_int32_trunc(fxrl_x_div_by_n(t->recent_cpu, 4)) 
-//                      - (t->nice * 2));
-
-//  printf("DEBUG:  New priority before normalization:  %i \n", priority_temp);
-  
   if (priority_temp < PRI_MIN)
     t->priority = PRI_MIN;
   else if (priority_temp > PRI_MAX)
@@ -429,15 +421,14 @@ int thread_recalc_priority (struct thread *t)
   else 
     t->priority = priority_temp;
 
-  if (t != idle_thread)
-//    printf("DEBUG:  Recalculated priority:  %i  for:  '%s'  with recent_cpu:  %"PRId32" \n", t->priority, t->name, t->recent_cpu);
-
+//  if (t != idle_thread) printf("DEBUG:  Recalculated priority:  %i  for:  '%s'  with recent_cpu:  %"PRId32" \n", t->priority, t->name, t->recent_cpu);
   return t->priority;
 }
 
 void thread_recalc_all_priorities(void)
 {
 //  printf("DEBUG:  +4 ticks occurred. Recalculating all non-idle priorities now: \n");
+  ASSERT(thread_mlfqs);
   thread_foreach(thread_recalc_priority, NULL);
 }
 
@@ -473,11 +464,10 @@ thread_recalc_load_avg (void)
 {
   /* This is ONLY called by the timer_interrupt handler */
   /* Formula:  load_avg = (59/60)*load_avg + (1/60)*ready_threads */
-  ASSERT (intr_get_level () == INTR_OFF);  
-  load_avg = fxrl_x_plus_y (fxrl_x_times_59_60(load_avg), 
-                            fxrl_from_int32_times_1_60(
-                            thread_get_ready_threads()));
-                            
+  ASSERT (intr_get_level () == INTR_OFF); 
+  ASSERT(thread_mlfqs);
+  load_avg = fxrl_x_plus_y(fxrl_x_div_by_n(fxrl_x_times_n(load_avg, 59), 60), 
+             fxrl_x_div_by_n(fxrl_from_int32(thread_get_ready_threads()), 60));
 //  printf("DEBUG:  Recalculated load_avg:  %"PRId64" \n", (int64_t) load_avg);
 }
 
@@ -485,6 +475,8 @@ thread_recalc_load_avg (void)
 int
 thread_get_load_avg (void) 
 {
+//  printf("DEBUG:  get_load_avg() returning:  %i \n", fxrl_to_int32_near(fxrl_x_times_n(load_avg, 100)));
+  ASSERT(thread_mlfqs);
   return (int) fxrl_to_int32_near( fxrl_x_times_n(load_avg, 100) );
 }
 
@@ -500,14 +492,16 @@ thread_get_load_avg (void)
 void 
 thread_recalc_recent_cpu (struct thread *t)
 {
-  ASSERT (intr_get_level () == INTR_OFF); 
+  ASSERT (intr_get_level () == INTR_OFF);
+  ASSERT(thread_mlfqs);
   t->recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(t->recent_cpu, 
-                      fxrl_x_plus_n(fxrl_2x(load_avg), 1)), 
-                      fxrl_2x(load_avg)), (int32_t) t->nice);
+                      fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), 
+                      fxrl_x_times_n(load_avg, 2)), (int32_t) t->nice);
 }
 
 void thread_recalc_all_recent_cpu (void)
 {
+  ASSERT(thread_mlfqs);
   thread_foreach(thread_recalc_recent_cpu, NULL);
 }
 
@@ -515,9 +509,8 @@ void thread_recalc_all_recent_cpu (void)
 int
 thread_get_recent_cpu (void) 
 {
-  struct thread *cur = thread_current();
-
-  return (int) fxrl_to_int32_near(fxrl_100x(cur->recent_cpu));
+  ASSERT(thread_mlfqs);
+  return (int) fxrl_to_int32_near(fxrl_x_times_n(thread_current()->recent_cpu, 100));
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
