@@ -26,13 +26,13 @@ main () {
       cd build
       
     # Run all of the following tests which are not commented out:
-      #alarm_single
-      #alarm_multiple
-      #alarm-simultaneous
-      #alarm-priority
-      #alarm-zero                 
-      #alarm-negative             
-      priority-change
+      alarm_single
+      alarm_multiple
+      alarm-simultaneous
+      alarm-priority
+      alarm-zero
+      alarm-negative
+      #priority-change
       #priority-donate-one
       #priority-donate-multiple
       #priority-donate-multiple2
