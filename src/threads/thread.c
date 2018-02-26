@@ -363,8 +363,7 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread) 
-    //list_push_back (&ready_list, &cur->elem);
-    list_insert_ordered(&ready_list,&cur->elem,priority_thread_compare,NULL);
+    list_push_back (&ready_list, &cur->elem);
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -606,8 +605,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();
-  //list_push_back (&all_list, &t->allelem);
-  list_insert_ordered(&all_list,&t->allelem,priority_thread_compare,NULL);
+  list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
 }
 
