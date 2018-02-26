@@ -32,6 +32,28 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 
+bool priority_thread_compare(struct list_elem *t, struct list_elem *u, void *aux){
+  //printf("Compare start\n");
+  ASSERT(t);
+  ASSERT(u);
+  struct thread *a =list_entry(t, struct thread, elem);
+  struct thread *b =list_entry(u, struct thread, elem);
+  ASSERT(a);
+  ASSERT(b);
+  //printf("Compare success\n");
+
+  //printf("DEBUG:  Comparing '%s' priority:  %i  >  '%s' priority:  %i  \n",a->name, a->priority, b->name, b->priority);
+
+
+  if(a->priority>b->priority){
+    return true;
+  }else{
+    return false;
+  }
+
+
+}
+
 /* Initializes semaphore SEMA to VALUE.  A semaphore is a
    nonnegative integer along with two atomic operators for
    manipulating it:
@@ -69,8 +91,8 @@ sema_down (struct semaphore *sema)
   while (sema->value == 0) 
     {
 
-      list_push_back (&sema->waiters, &thread_current ()->elem);
-
+      //list_push_back (&sema->waiters, &thread_current ()->elem);
+      list_insert_ordered(&sema->waiters,&thread_current ()->elem,priority_thread_compare,NULL);
       thread_block ();
     }
   sema->value--;
@@ -158,7 +180,13 @@ sema_test_helper (void *sema_)
       sema_up (&sema[1]);
     }
 }
-
+/* checks if a lock is being held by a lower priority thread, if it is then it will
+ * change the priority of the holder to the current threads priority
+ */
+//void donate_priority(struct lock *){
+
+//}
+
 /* Initializes LOCK.  A lock can be held by at most a single
    thread at any given time.  Our locks are not "recursive", that
    is, it is an error for the thread currently holding a lock to
@@ -191,6 +219,7 @@ lock_init (struct lock *lock)
    interrupt handler.  This function may be called with
    interrupts disabled, but interrupts will be turned back on if
    we need to sleep. */
+
 void
 lock_acquire (struct lock *lock)
 {
