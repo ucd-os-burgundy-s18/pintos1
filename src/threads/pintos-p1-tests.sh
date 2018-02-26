@@ -26,12 +26,12 @@ main () {
       cd build
       
     # Run all of the following tests which are not commented out:
-      alarm_single
-      alarm_multiple
-      alarm-simultaneous
-      alarm-priority
-      alarm-zero
-      alarm-negative
+      #alarm_single
+      #alarm_multiple
+      #alarm-simultaneous
+      #alarm-priority
+      #alarm-zero
+      #alarm-negative
       #priority-change
       #priority-donate-one
       #priority-donate-multiple
@@ -47,12 +47,12 @@ main () {
       #mlfqs-load-1
       #mlfqs-load-60
       #mlfqs-load-avg
-      #mlfqs-recent-1
-      #mlfqs-fair-2
-      #mlfqs-fair-20
-      #mlfqs-nice-2
-      #mlfqs-nice-10
-      #mlfqs-block
+      mlfqs-recent-1
+      mlfqs-fair-2
+      mlfqs-fair-20
+      mlfqs-nice-2
+      mlfqs-nice-10
+      mlfqs-block
       
     # End of script execution.
       echo ""

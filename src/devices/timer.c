@@ -39,14 +39,24 @@ static void real_time_delay (int64_t num, int32_t denom);
  */
 
 bool sleeping_thread_compare(struct list_elem *t, struct list_elem *u, void *aux){
-    printf("Compare start\n");
+    //printf("Compare start\n");
     ASSERT(t);
     ASSERT(u);
     struct sleeping_thread *a =list_entry(t, struct sleeping_thread, elem);
     struct sleeping_thread *b =list_entry(u, struct sleeping_thread, elem);
     ASSERT(a);
     ASSERT(b);
-    printf("Compare success\n");
+    //printf("Compare success\n");
+    enum intr_level old_level = intr_disable ();
+    //printf("DEBUG:  Comparing '%s' time:  %i  <  '%s' time:  %i  \n",a->name, a->wake_time, b->name, b->wake_time);
+    intr_set_level (old_level);
+    if(a->wake_time==b->wake_time){
+        if(a->priority>b->priority){
+            return true;
+        }else{
+            return false;
+        }
+    }
     if(a->wake_time<b->wake_time){
         return true;
     }else{
@@ -127,30 +137,44 @@ timer_sleep (int64_t ticks)
   ASSERT (intr_get_level () == INTR_ON);
   while (timer_elapsed (start) < ticks)
     thread_yield ();
-  */
-    printf("ENTERING SLEEP FUNCTION:\n");
+
+  */enum intr_level old_level;
+    old_level = intr_disable ();
+    struct thread *cur = thread_current ();
+    //printf("ENTERING SLEEP FUNCTION:\n");
     int64_t time_to_wake=timer_ticks()+ticks;
-
-    struct sleeping_thread* cur_thread;
-    printf("allocating sleeping thread\n");
+    //printf("going to sleep until :%i\n",time_to_wake);
+    struct sleeping_thread cur_thread;
+    //printf("allocating sleeping thread\n");
     //cur_thread = malloc(sizeof(struct sleeping_thread));
+    struct semaphore wake_up;
+    cur_thread.sema=&wake_up;
+    //printf("Assinging values\n");
+    cur_thread.wake_time=time_to_wake;
+    //printf("Initializing semaphore:\n");
+    sema_init (&wake_up, 0);
+    cur_thread.priority=thread_get_priority();
+    ASSERT(&cur_thread.elem!=NULL);
 
-    cur_thread = palloc_get_page (PAL_ZERO);
-    printf("Assinging values\n");
-    cur_thread->wake_time=time_to_wake;
-    printf("Initializing semaphore:\n");
-    sema_init (cur_thread->sema, 0);
+    const char* name=thread_name();
+    cur_thread.name=name;
+    //printf("Inserting thread to sleeping list\n");
+    //old_level = intr_disable ();
+    list_insert_ordered(&time_based_sleeping_thread_list,&cur_thread.elem,sleeping_thread_compare,NULL);
+    //snprintf (name, sizeof name, "thread %d", i);
 
-    ASSERT(&cur_thread->elem!=NULL);
+    //printf(name);
+    //printf(" Is going to sleep\n");
 
 
-    printf("Inserting thread to sleeping list\n");
-    list_insert_ordered(&time_based_sleeping_thread_list,&cur_thread->elem,sleeping_thread_compare,NULL);
-    printf("Inserted entering sema down\n");
 
-    sema_down(cur_thread->sema);
-    printf("WAKING UP\n");
-    free(cur_thread);
+    intr_set_level (old_level);
+
+    sema_down(cur_thread.sema);
+    //printf(name);
+    //snprintf (name, sizeof name, "thread %d", i);
+    //printf(" has woken up\n");
+    //free(cur_thread);
 
 }
 
@@ -228,43 +252,54 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
+
   ticks++;
   thread_tick ();
   int64_t current_ticks = timer_ticks();
+    enum intr_level old_level;
+    old_level = intr_disable ();
 
   //printf("DEBUG:  Timer interrupt called at tick:  %"PRId64" \n", current_ticks);
 
   /* CRITICAL SECTION: */
   /* Do stuff with interrupts disabled */
-  enum intr_level old_level;
-  old_level = intr_disable ();
 
-  for(;;) {
-      if(!list_empty(&time_based_sleeping_thread_list)) {
+
+
+    for(;;) {
+
+      //printf("NumChecks: %i\n",numChecks);
+
+      if(list_empty(&time_based_sleeping_thread_list)) {
+          break;
+      }else{
 
           struct list_elem *e;
 
           e = list_begin (&time_based_sleeping_thread_list);
-          printf("IF IT BREAKS HERE THEN WE KNOW WE ARE NOT PUTTING THE SLEEPING_THREAD IN RIGHT\n");
+          //printf("IF IT BREAKS HERE THEN WE KNOW WE ARE NOT PUTTING THE SLEEPING_THREAD IN RIGHT\n");
           ASSERT(e!=NULL);
 
-          struct sleeping_thread *t = list_entry(e, struct sleeping_thread, elem);
-          printf("IF IT BREAKS HERE THEN WE KNOW WE PUT AN INCORRECT THREAD IN\n");
-          printf(t->wake_time);
-          printf("\n");
+          struct sleeping_thread t = *list_entry(e, struct sleeping_thread, elem);
+          //printf("IF IT BREAKS HERE THEN WE KNOW WE PUT AN INCORRECT THREAD IN\n");
+          //printf("DEBUG:  Checking thread '%s', thread time %i ",t.name,t.wake_time);
+          //printf("current tick:  %"PRId64" \n", current_ticks);
 
-          if (t->wake_time >= current_ticks) {
-              sema_up(t->sema);
+          if (t.wake_time <= current_ticks) {
+              sema_up(t.sema);
               list_pop_front (&time_based_sleeping_thread_list);
+              //printf("DEBUG:  Releasing thread '%s\n",t.name);
+
 
           }else{
+              //printf("DEBUG:  Ignoring thread '%s', thread time %i, current time %i\n",t.name,t.wake_time,ticks);
+
               break;
           }
-      }else{
-          break;
+
       }
   }
-
+    //printf("DEBUG: Done checking sleeping threads\n");
   /* MLFQS:  Advanced scheduler recalculations */
   if (thread_mlfqs)
   {
