@@ -33,7 +33,7 @@ main () {
       #alarm-zero
       #alarm-negative
       #priority-change
-      #priority-donate-one
+      priority-donate-one
       #priority-donate-multiple
       #priority-donate-multiple2
       #priority-donate-nest
@@ -46,7 +46,7 @@ main () {
       #priority-donate-chain
       #mlfqs-load-1
       #mlfqs-load-60
-      mlfqs-load-avg
+      #mlfqs-load-avg
       #mlfqs-recent-1
       #mlfqs-fair-2
       #mlfqs-fair-20

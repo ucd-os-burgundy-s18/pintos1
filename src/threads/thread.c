@@ -184,7 +184,7 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
-
+  //printf("Thread '%s' has been created with priority %i\n",name,priority);
   ASSERT (function != NULL);
 
   int running_priority = running_thread()->priority;
@@ -274,7 +274,8 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  list_push_back (&ready_list, &t->elem);
+  //list_push_back (&ready_list, &t->elem);
+  list_insert_ordered(&ready_list, &t->elem, priority_thread_compare, NULL);
   t->status = THREAD_READY;
 
   /* When a thread is added to the ready list that has a higher priority than
@@ -356,10 +357,13 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
-    if (thread_mlfqs)
+    if (thread_mlfqs) {
+      list_push_back(&ready_list, &cur->elem);
+    }else {
       list_push_back (&ready_list, &cur->elem);
-    else
-      list_insert_ordered(&ready_list,&cur->elem,priority_thread_compare,NULL);
+      list_sort(&ready_list, priority_thread_compare, NULL);
+      //list_insert_ordered(&ready_list, &cur->elem, priority_thread_compare, NULL
+    }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
