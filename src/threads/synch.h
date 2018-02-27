@@ -5,14 +5,9 @@
 #include <stdbool.h>
 
 /* Each thread will keep track of the priorities that it aquired via donations
- * as well as the lock the priority
+ * as well as the lock the priority, the thread will store its origional priority in another varible
+ *
  */
-struct old_priority{
-	struct list_elem elem;
-	int priority;
-	struct lock* lock;
-	struct thread* doner;
-};
 bool priority_thread_compare(struct list_elem *t, struct list_elem *u, void *aux);
 bool priority_sema_compare(struct list_elem *t, struct list_elem *u, void *aux);
 /* A counting semaphore. */
@@ -53,9 +48,9 @@ bool lock_held_by_current_thread (const struct lock *);
 //void donate_priority(struct sema *sema,struct thread* cur);
 /* Condition variable. */
 struct condition 
-  {
+{
     struct list waiters;        /* List of waiting threads. */
-  };
+};
 
 void cond_init (struct condition *);
 void cond_wait (struct condition *, struct lock *);

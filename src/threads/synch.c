@@ -245,8 +245,20 @@ sema_test_helper (void *sema_)
  *
  * DONERS DONT CHANGE PRIORITY
  *
- * TAKE HIGHEST PRIORITY DONER, RETURN DONATIONS
+ * TAKE HIGHEST PRIORITY DONER, RETURN DONATIONS(Should be handled by the locks semaphore)
  * RETURNING IS METAPHORICAL, YOU JUST LOWER YOUR PRIORITY TO THE HIGHEST DONATION THAT REMAINS
+ *
+ * Possible implementation details
+ * 1. A thread checks if the lock it is trying to aquire is held by a lower priority thread
+ * 2. The thread will check if a thread of equal or higher priority has already donated to aquire this lock
+ * 		we can do this via the lock's semaphore's waiter list, as we can assume the one that came before
+ * 		also donated. if a previous doner had an equal or highet priority then us
+ * 		then we do nothing and return because whoever donated begfore should resolve things
+ * 		If we are the highest doner, then we add ourselves to the threads doner list
+ * 3. If the lock holder is blocked, then it will get the waiting_on member of the lock holder
+ * 		It will then call donate_priority(lock_holder->waiting_on,lock->holder)
+ * 		this will allow chained donations
+ *
  *
  *
  */
@@ -261,10 +273,13 @@ void donate_priority(struct lock *lock,struct thread* cur){
   {
 	if (lock->holder->priority <= cur->priority) {
 	  printf("DEBUG:  setting '%s' priority:  %i  to  '%s' priority:  %i  \n",lock->holder->name, lock->holder->priority, thread_current()->name, thread_current()->priority);
-
+	  struct thread* cur_thread=thread_current();
+	  cur_thread->donee_priority=lock->holder->priority;
       lock->holder->priority = cur->priority;
 
-      list_sort(&lock->semaphore.waiters, priority_thread_compare, NULL);
+	  //We insert our donation into the thread we are donating to
+	  list_insert_ordered(&lock->holder->donor_priorities,&cur_thread->elem,priority_thread_compare,NULL);
+      //list_sort(&lock->semaphore.waiters, priority_thread_compare, NULL);
 
       //list_insert_ordered(&ready_list,&cur->elem,priority_thread_compare,NULL);
       //list_sort(&ready_list, priority_thread_compare, NULL);
@@ -276,6 +291,20 @@ void donate_priority(struct lock *lock,struct thread* cur){
 
 
 
+}
+/*
+ * Function called from withen lock_release, what this function does
+ * is it sets its priority to that of whatever priority before the highest doner changed
+ * the current threads priority
+ * Possible implementation details
+ * 1. When releasing a lock a thread will check its doner list for the doner that donated
+ * 		just to aquire this one lock(We will leave them to fight over the lock!)
+ *
+ */
+void return_priority(struct lock *lock,struct thread* cur){
+  struct thread* t;
+  t=list_entry(list_pop_front(&sema->waiters),struct thread, elem);
+  if
 }
 
 /* Initializes LOCK.  A lock can be held by at most a single
@@ -321,7 +350,7 @@ lock_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
 
 
-  //donate_priority(lock,thread_current());
+  donate_priority(lock,thread_current());
 
   sema_down (&lock->semaphore);
   lock->holder = thread_current ();
@@ -341,7 +370,7 @@ lock_try_acquire (struct lock *lock)
 
   ASSERT (lock != NULL);
   ASSERT (!lock_held_by_current_thread (lock));
-
+  donate_priority(lock,thread_current());
   success = sema_try_down (&lock->semaphore);
   if (success)
     lock->holder = thread_current ();

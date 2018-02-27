@@ -102,6 +102,7 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
+  initial_thread->donee_priority=0;
   initial_thread->recent_cpu = 0;
   initial_thread->nice = NICE_DEFAULT;
   init_thread (initial_thread, "main", PRI_DEFAULT);
@@ -223,13 +224,13 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-
+  t->donee_priority=0;
   /* Add to run queue. */
   thread_unblock (t);
 
 //  printf("DEBUG:  thread_create() about to test if new thread priority:  %i  >  parent thread priority:  %i \n", t->priority, thread_current()->priority);
 //  printf("DEBUG:  also, new thread recent_cpu:  %"PRId32"  parent thread recent_cpu:  %"PRId32" \n", t->recent_cpu, thread_current()->recent_cpu);
-
+  list_init(&t->donor_priorities);
   if (t->priority > thread_current()->priority)
   {
 //    printf("DEBUG:--> new thread has higher priority than parent thread; YIELDING \n");
