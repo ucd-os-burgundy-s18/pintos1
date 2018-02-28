@@ -101,13 +101,14 @@ struct thread
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
+
+    struct list_elem donor_elem;
 	/*When a thread donates to another thread
 	 * the priority of the thread that the current thread donated to
 	 * is saved here
 	 */
 
-
-	int donee_priority;
+	int initial_priority;
 	/*
 	 * When the thread is waiting on a lock, the lock that it is waiting on is stored here
 	 * This is helpful if a doner thread needs to donate to a thread that is blocked due to a lock
@@ -119,7 +120,7 @@ struct thread
 	 * change if a another thread donates priority to this thread,
 	 * or if the thread "gives the donated priority back to the doner"
 	 */
-    struct list doners;
+    struct list donors;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */

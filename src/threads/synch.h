@@ -9,6 +9,7 @@
  *
  */
 bool priority_thread_compare(struct list_elem *t, struct list_elem *u, void *aux);
+bool priority_thread_compare_largest_first(struct list_elem *t, struct list_elem *u, void *aux);
 bool priority_sema_compare(struct list_elem *t, struct list_elem *u, void *aux);
 /* A counting semaphore. */
 struct semaphore 
@@ -37,6 +38,7 @@ struct lock
     struct thread *holder;      /* Thread holding lock (for debugging). */
     struct semaphore semaphore; /* Binary semaphore controlling access. */
 
+
 };
 
 void lock_init (struct lock *);
@@ -45,7 +47,8 @@ bool lock_try_acquire (struct lock *);
 void lock_release (struct lock *);
 bool lock_held_by_current_thread (const struct lock *);
 
-//void donate_priority(struct sema *sema,struct thread* cur);
+void donate_priority(struct lock* lock,struct thread* cur,int max_levels);
+void return_priority(struct lock* lock,struct thread* cur);
 /* Condition variable. */
 struct condition 
 {

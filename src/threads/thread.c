@@ -102,10 +102,13 @@ thread_init (void)
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
-  initial_thread->donee_priority=0;
+  initial_thread->initial_priority=0;
+
   initial_thread->recent_cpu = 0;
   initial_thread->nice = NICE_DEFAULT;
+
   init_thread (initial_thread, "main", PRI_DEFAULT);
+
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
 }
@@ -180,6 +183,8 @@ tid_t
 thread_create (const char *name, int priority,
                thread_func *function, void *aux)
 {
+  enum intr_level old_level;
+  old_level = intr_disable ();
   struct thread *t;
   struct kernel_thread_frame *kf;
   struct switch_entry_frame *ef;
@@ -199,7 +204,9 @@ thread_create (const char *name, int priority,
     return TID_ERROR;
 
   /* Initialize thread. */
+
   init_thread (t, name, priority);
+
   tid = t->tid = allocate_tid ();
 
   /* MLFQS: Inheritance from parent thread */
@@ -224,22 +231,18 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
-  t->donee_priority=0;
+  t->initial_priority=priority;
   /* Add to run queue. */
-  thread_unblock (t);
 
+  thread_unblock (t);
+  intr_set_level (old_level);
+  if(running_priority<priority)
+    thread_yield();
 //  printf("DEBUG:  thread_create() about to test if new thread priority:  %i  >  parent thread priority:  %i \n", t->priority, thread_current()->priority);
 //  printf("DEBUG:  also, new thread recent_cpu:  %"PRId32"  parent thread recent_cpu:  %"PRId32" \n", t->recent_cpu, thread_current()->recent_cpu);
-  list_init(&t->donor_priorities);
-  if (t->priority > thread_current()->priority)
-  {
-//    printf("DEBUG:--> new thread has higher priority than parent thread; YIELDING \n");
-    thread_yield();
-  }
-  else
-  {
-//    printf("DEBUG:--> new thread does NOT have higher priority than parent; NOT YIELDING \n");
-  }
+
+
+
 
   return tid;
 }
@@ -276,7 +279,9 @@ thread_unblock (struct thread *t)
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
   //list_push_back (&ready_list, &t->elem);
-  list_insert_ordered(&ready_list, &t->elem, priority_thread_compare, NULL);
+  list_insert_ordered(&ready_list, &t->elem, priority_thread_compare_largest_first, NULL);
+  //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
+  //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
   t->status = THREAD_READY;
 
   /* When a thread is added to the ready list that has a higher priority than
@@ -361,9 +366,9 @@ thread_yield (void)
     if (thread_mlfqs) {
       list_push_back(&ready_list, &cur->elem);
     }else {
-      list_push_back (&ready_list, &cur->elem);
-      list_sort(&ready_list, priority_thread_compare, NULL);
-      //list_insert_ordered(&ready_list, &cur->elem, priority_thread_compare, NULL
+      //list_push_back (&ready_list, &cur->elem);
+      //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
+      list_insert_ordered(&ready_list, &cur->elem, priority_thread_compare_largest_first, NULL);
     }
   cur->status = THREAD_READY;
   schedule ();
@@ -393,7 +398,7 @@ thread_set_priority (int new_priority)
 {
   int old_priority = thread_current()->priority;
   thread_current()->priority = new_priority;
-
+  thread_current()->initial_priority= new_priority;
   if (new_priority < old_priority)
   {
 //    printf("DEBUG:  thread_set_priority() set a lower priority; thread YIELDING \n");
@@ -453,6 +458,7 @@ int32_t
 thread_get_ready_threads (void)
 {
   ASSERT (intr_get_level () == INTR_OFF);
+
   ready_threads = list_size(&ready_list);
   if (thread_current() != idle_thread)
     ++ready_threads;
@@ -603,10 +609,16 @@ init_thread (struct thread *t, const char *name, int priority)
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();
-  if (thread_mlfqs)
-    list_push_back (&all_list, &t->allelem);
-  else
-    list_insert_ordered(&all_list,&t->allelem,priority_thread_compare,NULL);
+  list_init(&t->donors);
+  t->initial_priority=priority;
+  if (thread_mlfqs) {
+    list_push_back(&all_list, &t->allelem);
+  }
+  else {
+    list_push_back(&all_list, &t->allelem);
+    list_sort(&all_list, priority_thread_compare_largest_first, NULL);
+  }
+  //list_insert_ordered(&all_list,&t->allelem,priority_thread_compare_largest_first,NULL);
   intr_set_level (old_level);
 }
 
@@ -689,6 +701,7 @@ thread_schedule_tail (struct thread *prev)
 static void
 schedule (void)
 {
+
   struct thread *cur = running_thread ();
   struct thread *next = next_thread_to_run ();
   struct thread *prev = NULL;

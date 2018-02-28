@@ -33,7 +33,7 @@ main () {
       #alarm-zero
       #alarm-negative
       #priority-change
-      priority-donate-one
+      #priority-donate-one
       #priority-donate-multiple
       #priority-donate-multiple2
       #priority-donate-nest
