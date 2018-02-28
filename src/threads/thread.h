@@ -86,6 +86,7 @@ typedef int tid_t;
    only because they are mutually exclusive: only a thread in the
    ready state is on the run queue, whereas only a thread in the
    blocked state is on a semaphore wait list. */
+
 struct thread
   {
     /* Owned by thread.c. */
@@ -101,6 +102,25 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
+    struct list_elem donor_elem;
+	/*When a thread donates to another thread
+	 * the priority of the thread that the current thread donated to
+	 * is saved here
+	 */
+
+	int initial_priority;
+	/*
+	 * When the thread is waiting on a lock, the lock that it is waiting on is stored here
+	 * This is helpful if a doner thread needs to donate to a thread that is blocked due to a lock
+	 * The doner will then force the current thread to donate its newly recieved priority to the
+	 * holder of the lock
+	 */
+	struct lock* waiting_on;
+	/* Used to store information about the threads previous priorities, this should only
+	 * change if a another thread donates priority to this thread,
+	 * or if the thread "gives the donated priority back to the doner"
+	 */
+    struct list donors;
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -155,3 +175,31 @@ void thread_recalc_load_avg (void);
 int thread_get_load_avg (void);
 
 #endif /* threads/thread.h */
+/*
+ * MLFQS notes: although we finished this mostly
+ * 64 lists
+ * [][][][][]63
+ * [][][][][]62
+ *     .
+ *     .
+ *     .
+ * [][][][][]0
+ *
+ * Threads in the same list execute in RoundRobin
+ *
+ * More cpu cycles mean more likley thread(list) is to get demoted
+ *
+ * Execute until list is empty(either threads finish or get demoted)
+ *
+ * Based on average load in system, how much are runnable
+ * CPU time
+ *
+ *
+ * Based on niceness, makes a thread more preemptible then not
+ *
+ * More nice, means faster demotion
+ *
+ *
+ *
+ * MLFQS BLOCK TESTS: Threads are not excliuded from statistics, blockd threads get promoted
+ */
