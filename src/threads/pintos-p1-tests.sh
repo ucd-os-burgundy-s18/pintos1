@@ -21,10 +21,10 @@ main ()
 
         cd build
 
-        #alarm_single
+        alarm_single
         # alarm_multiple
         # alarm-simultaneous
-        # alarm-priority
+         #alarm-priority
         # alarm-zero
         # alarm-negative
 
@@ -39,7 +39,7 @@ main ()
          #priority-preempt
          #priority-sema
          #priority-condvar
-         priority-donate-chain
+         #priority-donate-chain
 
         # mlfqs-load-1
         # mlfqs-load-60

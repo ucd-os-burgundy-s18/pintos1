@@ -150,14 +150,15 @@ void thread_unblock (struct thread *);
 struct thread *thread_current (void);
 tid_t thread_tid (void);
 const char *thread_name (void);
-
+static bool thread_is_init();
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
 
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
-
+static bool
+is_thread (struct thread *t);
 int thread_get_priority (void);
 void thread_set_priority (int);
 int thread_recalc_priority (struct thread *t);

@@ -566,6 +566,9 @@ kernel_thread (thread_func *function, void *aux)
   thread_exit ();       /* If function() returns, kill the thread. */
 }
 
+static bool thread_is_init(){
+  return running_thread();
+}
 /* Returns the running thread. */
 struct thread *
 running_thread (void)
