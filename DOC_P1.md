@@ -19,8 +19,8 @@ Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
 >> If you have any preliminary comments on your submission, notes for the
 >> TAs, or extra credit, please give them here.
 
->> Consulted by using the Pintos Manual and the Project1 PDF
->> given to us by Ivo Georgiev
+ Consulted by using the Pintos Manual and the Project1 PDF
+ given to us by Ivo Georgiev
 
 
 			     ALARM CLOCK
@@ -53,7 +53,7 @@ Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
 
-it will set the amount of ticks in timer_ticks to int64_t.  Then it will create an old_level component that will disable
+It will set the amount of ticks in timer_ticks to int64_t.  Then it will create an old_level component that will disable
 the timer interrupt. 
  With the timer interrupt disabled, we will see if the list is empty, and if it is, we will break out and call the timer interrupt. 
  Else we will create a struct list_elem *e;  The sleeping thread list will then be put into this.  We also check to ensure we 
@@ -66,7 +66,7 @@ the timer interrupt.
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
- race conditions of multiple threads calling timer_sleep are prevented by giving priority to a thread and then also putting 
+ Race conditions of multiple threads calling timer_sleep are prevented by giving priority to a thread and then also putting 
  it into an ordered list.  The ordered list will only pop off one thread at a time into the sleeping thread list
 
 >> A5: How are race conditions avoided when a timer interrupt occurs
