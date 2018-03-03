@@ -582,12 +582,20 @@ running_thread (void)
   asm ("mov %%esp, %0" : "=g" (esp));
   return pg_round_down (esp);
 }
+struct thread * get_running_thread(){
+  return running_thread();
+}
 
 /* Returns true if T appears to point to a valid thread. */
 static bool
 is_thread (struct thread *t)
 {
   return t != NULL && t->magic == THREAD_MAGIC;
+}
+/*Simmilare to is_thread;*/
+bool check_is_thread(){
+
+  return is_thread(running_thread())&(running_thread()->status==THREAD_RUNNING);
 }
 
 /* Does basic initialization of T as a blocked thread named
