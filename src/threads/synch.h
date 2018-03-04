@@ -16,8 +16,6 @@ struct semaphore
   {
     unsigned value;             /* Current value. */
     struct list waiters;        /* List of waiting threads. */
-
-
   };
 
 void sema_init (struct semaphore *, unsigned value);
@@ -51,9 +49,9 @@ void donate_priority();
 void return_priority(struct lock* lock,struct thread* cur);
 /* Condition variable. */
 struct condition 
-{
+  {
     struct list waiters;        /* List of waiting threads. */
-};
+  };
 
 void cond_init (struct condition *);
 void cond_wait (struct condition *, struct lock *);

@@ -241,9 +241,6 @@ thread_create (const char *name, int priority,
 //  printf("DEBUG:  thread_create() about to test if new thread priority:  %i  >  parent thread priority:  %i \n", t->priority, thread_current()->priority);
 //  printf("DEBUG:  also, new thread recent_cpu:  %"PRId32"  parent thread recent_cpu:  %"PRId32" \n", t->recent_cpu, thread_current()->recent_cpu);
 
-
-
-
   return tid;
 }
 
@@ -356,13 +353,18 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
-    if (thread_mlfqs) {
+  {
+    if (thread_mlfqs) 
+    {
       list_push_back(&ready_list, &cur->elem);
-    }else {
+    }
+    else 
+    {
       //list_push_back (&ready_list, &cur->elem);
       //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
       list_insert_ordered(&ready_list, &cur->elem, priority_thread_compare_largest_first, NULL);
     }
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -391,24 +393,27 @@ thread_set_priority (int new_priority)
 {
 
   int old_priority = thread_current()->priority;
-  if(list_empty(&thread_current()->donors)) {
+  if(list_empty(&thread_current()->donors)) 
+  {
     thread_current()->priority = new_priority;
     //donate_priority();
   }
 
-  /*else{
-    if(thread_current()->waiting_on!=NULL) {
+  /*
+  else
+  {
+    if(thread_current()->waiting_on!=NULL) 
+    {
       donate_priority();
     }
-  }*/
+  }
+  */
   thread_current()->initial_priority= new_priority;
   if (thread_current()->priority < old_priority)
   {
-
 //    printf("DEBUG:  thread_set_priority() set a lower priority; thread YIELDING \n");
     thread_yield();
   }
-
 }
 
 /* Returns the current thread's priority. */
@@ -507,13 +512,6 @@ thread_get_load_avg (void)
 
 /* Recalculates specified thread's recent_cpu value */
 /* recent_cpu = (2*load_avg)/(2*load_avg + 1) * recent_cpu + nice */
-/* recent_cpu = (recent_cpu/(2*load_avg + 1))*(2*load_avg) + nice */
-// recent_cpu = ((recent_cpu/((2*load_avg) + 1))*(2*load_avg) + nice)
-// recent_cpu = ((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*(2*load_avg) + nice)
-// recent_cpu = ((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*fxrl_x_times_n(load_avg, 2) + nice)
-// recent_cpu = fxrl_x_plus_n((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*fxrl_x_times_n(load_avg, 2), (int32_t) nice)
-// recent_cpu = fxrl_x_plus_n(fxrl_x_times_y((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice)
-// recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(recent_cpu, fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice);
 void
 thread_recalc_recent_cpu (struct thread *t)
 {
@@ -527,8 +525,8 @@ thread_recalc_recent_cpu (struct thread *t)
   t->recent_cpu = fxrl_x_plus_n( temp_3, t->nice);
   
 //  t->recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(t->recent_cpu,
-//                                                               fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)),
-//                                               fxrl_x_times_n(load_avg, 2)), (int32_t) t->nice);
+//                                fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)),
+//                                fxrl_x_times_n(load_avg, 2)), (int32_t) t->nice);
 }
 
 void thread_recalc_all_recent_cpu (void)
