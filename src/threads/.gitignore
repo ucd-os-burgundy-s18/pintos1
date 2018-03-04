@@ -1,4 +1,4 @@
 build
 bochsrc.txt
 bochsout.txt
-/pintos-p1-tests.sh
+pintos-p1-tests.sh
