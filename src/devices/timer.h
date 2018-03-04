@@ -9,13 +9,13 @@
 #define TIMER_PRI_RECALC_FREQ 4
 
 struct sleeping_thread
-{
+  {
     struct semaphore* sema;
     int64_t wake_time;
     struct list_elem elem;
     const char* name;//used for debug pourpuses
     int priority;
-};
+  };
 
 void timer_init (void);
 void timer_calibrate (void);

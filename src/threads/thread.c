@@ -241,9 +241,6 @@ thread_create (const char *name, int priority,
 //  printf("DEBUG:  thread_create() about to test if new thread priority:  %i  >  parent thread priority:  %i \n", t->priority, thread_current()->priority);
 //  printf("DEBUG:  also, new thread recent_cpu:  %"PRId32"  parent thread recent_cpu:  %"PRId32" \n", t->recent_cpu, thread_current()->recent_cpu);
 
-
-
-
   return tid;
 }
 
@@ -278,23 +275,16 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  //list_push_back (&ready_list, &t->elem);
-  list_insert_ordered(&ready_list, &t->elem, priority_thread_compare_largest_first, NULL);
-  //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
-  //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
+  
+  /* This code will round-robin next_thread_to_run() */
+  list_push_back (&ready_list, &t->elem);
+  
+  /* This code passed 25 of 27 tests */
+  //list_insert_ordered(&ready_list, &t->elem, priority_thread_compare_largest_first, NULL);
+
   t->status = THREAD_READY;
 
-  /* When a thread is added to the ready list that has a higher priority than
-   * the currently running thread, the current thread should immediately yield
-   * the processor to the new thread.
-   */
-//  if (t->priority > thread_current()->priority)
-//    thread_yield();
-
-  /* Cannot implement this here, kernel stalls */
-
   intr_set_level (old_level);
-
 }
 
 /* Returns the name of the running thread. */
@@ -363,13 +353,18 @@ thread_yield (void)
 
   old_level = intr_disable ();
   if (cur != idle_thread)
-    if (thread_mlfqs) {
+  {
+    if (thread_mlfqs) 
+    {
       list_push_back(&ready_list, &cur->elem);
-    }else {
+    }
+    else 
+    {
       //list_push_back (&ready_list, &cur->elem);
       //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
       list_insert_ordered(&ready_list, &cur->elem, priority_thread_compare_largest_first, NULL);
     }
+  }
   cur->status = THREAD_READY;
   schedule ();
   intr_set_level (old_level);
@@ -398,24 +393,27 @@ thread_set_priority (int new_priority)
 {
 
   int old_priority = thread_current()->priority;
-  if(list_empty(&thread_current()->donors)) {
+  if(list_empty(&thread_current()->donors)) 
+  {
     thread_current()->priority = new_priority;
     //donate_priority();
   }
 
-  /*else{
-    if(thread_current()->waiting_on!=NULL) {
+  /*
+  else
+  {
+    if(thread_current()->waiting_on!=NULL) 
+    {
       donate_priority();
     }
-  }*/
+  }
+  */
   thread_current()->initial_priority= new_priority;
   if (thread_current()->priority < old_priority)
   {
-
 //    printf("DEBUG:  thread_set_priority() set a lower priority; thread YIELDING \n");
     thread_yield();
   }
-
 }
 
 /* Returns the current thread's priority. */
@@ -429,9 +427,18 @@ thread_get_priority (void)
 int thread_recalc_priority (struct thread *t)
 {
   ASSERT(thread_mlfqs);
-  int priority_temp = fxrl_to_int32_trunc( fxrl_n_minus_x(PRI_MAX,
-                                                          fxrl_x_minus_n( fxrl_x_div_by_n(t->recent_cpu, 4),
-                                                                          (t ->nice * 2))));
+  
+  fixedreal_t temp_1 = fxrl_x_div_by_n( t->recent_cpu, 4);
+  fixedreal_t temp_2 = fxrl_n_minus_x( PRI_MAX, temp_1 );
+  fixedreal_t temp_3 = fxrl_x_minus_n( temp_2, (t->nice * 2));
+
+  int priority_temp = fxrl_to_int32_trunc(temp_3);
+  
+//  int priority_temp = fxrl_to_int32_trunc( fxrl_n_minus_x(PRI_MAX,
+//                                                          fxrl_x_minus_n( 
+//                                                          fxrl_x_div_by_n(t->recent_cpu, 4),
+//                                                                          (t ->nice * 2))));
+
   if (priority_temp < PRI_MIN)
     t->priority = PRI_MIN;
   else if (priority_temp > PRI_MAX)
@@ -439,7 +446,7 @@ int thread_recalc_priority (struct thread *t)
   else
     t->priority = priority_temp;
 
-//  if (t != idle_thread) printf("DEBUG:  Recalculated priority:  %i  for:  '%s'  with recent_cpu:  %"PRId32" \n", t->priority, t->name, t->recent_cpu);
+//  if ((t != idle_thread) && (t->tid != 1)) printf("DEBUG:  Recalculated priority:  %i  for:  '%s'  with recent_cpu:  %"PRId32" \n", t->priority, t->name, t->recent_cpu);
   return t->priority;
 }
 
@@ -485,12 +492,16 @@ thread_recalc_load_avg (void)
   /* Formula:  load_avg = (59/60)*load_avg + (1/60)*ready_threads */
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT(thread_mlfqs);
-  load_avg = fxrl_x_plus_y(fxrl_x_div_by_n(fxrl_x_times_n(load_avg, 59), 60),
-                           fxrl_x_div_by_n(fxrl_from_int32(thread_get_ready_threads()), 60));
+  
+  fixedreal_t temp_1 = fxrl_x_div_by_n( fxrl_x_times_n(load_avg, 59), 60 );
+  fixedreal_t temp_2 = fxrl_x_div_by_n( fxrl_from_int32(thread_get_ready_threads()), 60 );
+  
+  load_avg = fxrl_x_plus_y(temp_1, temp_2);
+  
 //  printf("DEBUG:  Recalculated load_avg:  %"PRId64" \n", (int64_t) load_avg);
 }
 
-/* Returns 100 times the system load average. */
+/* Returns 100 times lthe system load average. */
 int
 thread_get_load_avg (void)
 {
@@ -501,21 +512,21 @@ thread_get_load_avg (void)
 
 /* Recalculates specified thread's recent_cpu value */
 /* recent_cpu = (2*load_avg)/(2*load_avg + 1) * recent_cpu + nice */
-/* recent_cpu = (recent_cpu/(2*load_avg + 1))*(2*load_avg) + nice */
-// recent_cpu = ((recent_cpu/((2*load_avg) + 1))*(2*load_avg) + nice)
-// recent_cpu = ((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*(2*load_avg) + nice)
-// recent_cpu = ((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*fxrl_x_times_n(load_avg, 2) + nice)
-// recent_cpu = fxrl_x_plus_n((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1))*fxrl_x_times_n(load_avg, 2), (int32_t) nice)
-// recent_cpu = fxrl_x_plus_n(fxrl_x_times_y((recent_cpu/fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice)
-// recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(recent_cpu, fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)), fxrl_x_times_n(load_avg, 2)), (int32_t) nice);
 void
 thread_recalc_recent_cpu (struct thread *t)
 {
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT(thread_mlfqs);
-  t->recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(t->recent_cpu,
-                                                               fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)),
-                                               fxrl_x_times_n(load_avg, 2)), (int32_t) t->nice);
+  
+  fixedreal_t temp_1 = fxrl_x_plus_n( (2 * load_avg), 1);
+  fixedreal_t temp_2 = fxrl_x_div_by_y( (2 * load_avg), temp_1);
+  fixedreal_t temp_3 = fxrl_x_times_y( temp_2, t->recent_cpu );
+  
+  t->recent_cpu = fxrl_x_plus_n( temp_3, t->nice);
+  
+//  t->recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(t->recent_cpu,
+//                                fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)),
+//                                fxrl_x_times_n(load_avg, 2)), (int32_t) t->nice);
 }
 
 void thread_recalc_all_recent_cpu (void)
@@ -669,7 +680,22 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  {
+    /* This is the original code: */
+    //struct thread * next_thread = list_entry (list_pop_front (&ready_list), struct thread, elem);
+
+    /* This is equivalent to the original code: */
+    // struct thread * next_thread;
+    // next_thread = list_entry(list_front(&ready_list),struct thread, elem);
+    // list_remove(&next_thread->elem);    
+
+    /* This code has been shown to round robin correctly but fails tests: */ 
+    struct thread * next_thread;
+    next_thread = list_entry(list_max(&ready_list, priority_thread_compare, NULL),struct thread, elem);
+    list_remove(&next_thread->elem);    
+
+    return next_thread;
+  }
 }
 
 /* Completes a thread switch by activating the new thread's page
