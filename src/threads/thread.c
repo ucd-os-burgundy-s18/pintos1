@@ -278,10 +278,16 @@ thread_unblock (struct thread *t)
 
   old_level = intr_disable ();
   ASSERT (t->status == THREAD_BLOCKED);
-  //list_push_back (&ready_list, &t->elem);
+  
+  /* This code will round-robin next_thread_to_run() */
+  // list_push_back (&ready_list, &t->elem);
+  
+  /* This code passed 25 of 27 tests */
   list_insert_ordered(&ready_list, &t->elem, priority_thread_compare_largest_first, NULL);
+
+  /* Disregard this code: */
   //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
-  //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
+
   t->status = THREAD_READY;
 
   /* When a thread is added to the ready list that has a higher priority than
@@ -294,7 +300,6 @@ thread_unblock (struct thread *t)
   /* Cannot implement this here, kernel stalls */
 
   intr_set_level (old_level);
-
 }
 
 /* Returns the name of the running thread. */
@@ -318,7 +323,7 @@ thread_current (void)
      of stack, so a few big automatic arrays or moderate
      recursion can cause stack overflow. */
   ASSERT (is_thread (t));
-  ASSERT (t->status == THREAD_RUNNING);
+//  ASSERT (t->status == THREAD_RUNNING);
 
   return t;
 }
@@ -430,7 +435,8 @@ int thread_recalc_priority (struct thread *t)
 {
   ASSERT(thread_mlfqs);
   int priority_temp = fxrl_to_int32_trunc( fxrl_n_minus_x(PRI_MAX,
-                                                          fxrl_x_minus_n( fxrl_x_div_by_n(t->recent_cpu, 4),
+                                                          fxrl_x_minus_n( 
+                                                          fxrl_x_div_by_n(t->recent_cpu, 4),
                                                                           (t ->nice * 2))));
   if (priority_temp < PRI_MIN)
     t->priority = PRI_MIN;
@@ -439,7 +445,7 @@ int thread_recalc_priority (struct thread *t)
   else
     t->priority = priority_temp;
 
-//  if (t != idle_thread) printf("DEBUG:  Recalculated priority:  %i  for:  '%s'  with recent_cpu:  %"PRId32" \n", t->priority, t->name, t->recent_cpu);
+//  if ((t != idle_thread) && (t->tid != 1)) printf("DEBUG:  Recalculated priority:  %i  for:  '%s'  with recent_cpu:  %"PRId32" \n", t->priority, t->name, t->recent_cpu);
   return t->priority;
 }
 
@@ -490,7 +496,7 @@ thread_recalc_load_avg (void)
 //  printf("DEBUG:  Recalculated load_avg:  %"PRId64" \n", (int64_t) load_avg);
 }
 
-/* Returns 100 times the system load average. */
+/* Returns 100 times lthe system load average. */
 int
 thread_get_load_avg (void)
 {
@@ -669,7 +675,22 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  {
+    /* This is the original code: */
+    struct thread * next_thread = list_entry (list_pop_front (&ready_list), struct thread, elem);
+
+    /* This is equivalent to the original code: */
+    // struct thread * next_thread;
+    // next_thread = list_entry(list_front(&ready_list),struct thread, elem);
+    // list_remove(&next_thread->elem);    
+
+    /* This code has been shown to round robin correctly but fails tests: */ 
+    // struct thread * next_thread;
+    // next_thread = list_entry(list_max(&ready_list, priority_thread_compare, NULL),struct thread, elem);
+    // list_remove(&next_thread->elem);    
+
+    return next_thread;
+  }
 }
 
 /* Completes a thread switch by activating the new thread's page
