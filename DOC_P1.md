@@ -1,5 +1,5 @@
 			+--------------------+
-			|        CS 140      |
+			|      CSCI 3453     |
 			| PROJECT 1: THREADS |
 			|   DESIGN DOCUMENT  |
 			+--------------------+
@@ -10,7 +10,7 @@
 
 Peter Gibbs <peter.gibbs@ucdenver.edu>
 
-Brian Sumner <brian.sumner@ucdenver.edu>
+Brian Sumner brian . sumner (a) ucdenver . edu
 
 Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
 
@@ -132,6 +132,16 @@ the timer interrupt.
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+This was added to thread.c as a temporary variable for storing ready_threads recalculations.
+> static int32_t ready_threads;
+
+This was added to thread.c to store the average number of ready threads over the past minute.
+> static fixedreal_t load_avg;            
+
+This was added to the thread struct to store each thread's recent_cpu value:
+> fixedreal_t recent_cpu;
+
+
 ---- ALGORITHMS ----
 
 >> C2: Suppose threads A, B, and C have nice values 0, 1, and 2.  Each
@@ -174,6 +184,8 @@ ticks   A   B   C   A   B   C   to run
 >> type and/or a set of functions or macros to manipulate fixed-point
 >> numbers, why did you do so?  If not, why not?
 
+
+
 			   SURVEY QUESTIONS
 			   ================
 
@@ -186,6 +198,8 @@ the quarter.
 >> In your opinion, was this assignment, or any one of the three problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
 
+This assignment would have been a lot easier if we had at least one competent TA to whom we could direct questions and receive helpful responses.  We would have spent a lot less time if we didn't have to wait for the instructor respond every time we needed a clarification on something.
+
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
 
@@ -195,5 +209,7 @@ the quarter.
 
 >> Do you have any suggestions for the TAs to more effectively assist
 >> students, either for future quarters or the remaining projects?
+
+In the future, there should be at least one competent TA - somebody who students can ask questions about the code and understand the questions in order to provide valuable feedback.  We had one TA and he was not capable of doing this.
 
 >> Any other comments?
