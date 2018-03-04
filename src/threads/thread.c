@@ -280,24 +280,12 @@ thread_unblock (struct thread *t)
   ASSERT (t->status == THREAD_BLOCKED);
   
   /* This code will round-robin next_thread_to_run() */
-  // list_push_back (&ready_list, &t->elem);
+  list_push_back (&ready_list, &t->elem);
   
   /* This code passed 25 of 27 tests */
-  list_insert_ordered(&ready_list, &t->elem, priority_thread_compare_largest_first, NULL);
-
-  /* Disregard this code: */
-  //list_sort(&ready_list, priority_thread_compare_largest_first, NULL);
+  //list_insert_ordered(&ready_list, &t->elem, priority_thread_compare_largest_first, NULL);
 
   t->status = THREAD_READY;
-
-  /* When a thread is added to the ready list that has a higher priority than
-   * the currently running thread, the current thread should immediately yield
-   * the processor to the new thread.
-   */
-//  if (t->priority > thread_current()->priority)
-//    thread_yield();
-
-  /* Cannot implement this here, kernel stalls */
 
   intr_set_level (old_level);
 }
@@ -323,7 +311,7 @@ thread_current (void)
      of stack, so a few big automatic arrays or moderate
      recursion can cause stack overflow. */
   ASSERT (is_thread (t));
-//  ASSERT (t->status == THREAD_RUNNING);
+  ASSERT (t->status == THREAD_RUNNING);
 
   return t;
 }
@@ -434,10 +422,18 @@ thread_get_priority (void)
 int thread_recalc_priority (struct thread *t)
 {
   ASSERT(thread_mlfqs);
-  int priority_temp = fxrl_to_int32_trunc( fxrl_n_minus_x(PRI_MAX,
-                                                          fxrl_x_minus_n( 
-                                                          fxrl_x_div_by_n(t->recent_cpu, 4),
-                                                                          (t ->nice * 2))));
+  
+  fixedreal_t temp_1 = fxrl_x_div_by_n( t->recent_cpu, 4);
+  fixedreal_t temp_2 = fxrl_n_minus_x( PRI_MAX, temp_1 );
+  fixedreal_t temp_3 = fxrl_x_minus_n( temp_2, (t->nice * 2));
+
+  int priority_temp = fxrl_to_int32_trunc(temp_3);
+  
+//  int priority_temp = fxrl_to_int32_trunc( fxrl_n_minus_x(PRI_MAX,
+//                                                          fxrl_x_minus_n( 
+//                                                          fxrl_x_div_by_n(t->recent_cpu, 4),
+//                                                                          (t ->nice * 2))));
+
   if (priority_temp < PRI_MIN)
     t->priority = PRI_MIN;
   else if (priority_temp > PRI_MAX)
@@ -491,8 +487,12 @@ thread_recalc_load_avg (void)
   /* Formula:  load_avg = (59/60)*load_avg + (1/60)*ready_threads */
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT(thread_mlfqs);
-  load_avg = fxrl_x_plus_y(fxrl_x_div_by_n(fxrl_x_times_n(load_avg, 59), 60),
-                           fxrl_x_div_by_n(fxrl_from_int32(thread_get_ready_threads()), 60));
+  
+  fixedreal_t temp_1 = fxrl_x_div_by_n( fxrl_x_times_n(load_avg, 59), 60 );
+  fixedreal_t temp_2 = fxrl_x_div_by_n( fxrl_from_int32(thread_get_ready_threads()), 60 );
+  
+  load_avg = fxrl_x_plus_y(temp_1, temp_2);
+  
 //  printf("DEBUG:  Recalculated load_avg:  %"PRId64" \n", (int64_t) load_avg);
 }
 
@@ -519,9 +519,16 @@ thread_recalc_recent_cpu (struct thread *t)
 {
   ASSERT (intr_get_level () == INTR_OFF);
   ASSERT(thread_mlfqs);
-  t->recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(t->recent_cpu,
-                                                               fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)),
-                                               fxrl_x_times_n(load_avg, 2)), (int32_t) t->nice);
+  
+  fixedreal_t temp_1 = fxrl_x_plus_n( (2 * load_avg), 1);
+  fixedreal_t temp_2 = fxrl_x_div_by_y( (2 * load_avg), temp_1);
+  fixedreal_t temp_3 = fxrl_x_times_y( temp_2, t->recent_cpu );
+  
+  t->recent_cpu = fxrl_x_plus_n( temp_3, t->nice);
+  
+//  t->recent_cpu = fxrl_x_plus_n(fxrl_x_times_y(fxrl_x_div_by_y(t->recent_cpu,
+//                                                               fxrl_x_plus_n(fxrl_x_times_n(load_avg, 2), 1)),
+//                                               fxrl_x_times_n(load_avg, 2)), (int32_t) t->nice);
 }
 
 void thread_recalc_all_recent_cpu (void)
@@ -677,7 +684,7 @@ next_thread_to_run (void)
   else
   {
     /* This is the original code: */
-    struct thread * next_thread = list_entry (list_pop_front (&ready_list), struct thread, elem);
+    //struct thread * next_thread = list_entry (list_pop_front (&ready_list), struct thread, elem);
 
     /* This is equivalent to the original code: */
     // struct thread * next_thread;
@@ -685,9 +692,9 @@ next_thread_to_run (void)
     // list_remove(&next_thread->elem);    
 
     /* This code has been shown to round robin correctly but fails tests: */ 
-    // struct thread * next_thread;
-    // next_thread = list_entry(list_max(&ready_list, priority_thread_compare, NULL),struct thread, elem);
-    // list_remove(&next_thread->elem);    
+    struct thread * next_thread;
+    next_thread = list_entry(list_max(&ready_list, priority_thread_compare, NULL),struct thread, elem);
+    list_remove(&next_thread->elem);    
 
     return next_thread;
   }

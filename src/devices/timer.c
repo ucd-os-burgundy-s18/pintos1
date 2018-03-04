@@ -264,7 +264,8 @@ timer_interrupt (struct intr_frame *args UNUSED)
   /* CRITICAL SECTION: */
   /* Do stuff with interrupts disabled */
 
-
+    struct list_elem *e;
+    struct sleeping_thread t;
 
     for(;;) {
 
@@ -274,13 +275,11 @@ timer_interrupt (struct intr_frame *args UNUSED)
           break;
       }else{
 
-          struct list_elem *e;
-
           e = list_begin (&time_based_sleeping_thread_list);
           //printf("IF IT BREAKS HERE THEN WE KNOW WE ARE NOT PUTTING THE SLEEPING_THREAD IN RIGHT\n");
           ASSERT(e!=NULL);
 
-          struct sleeping_thread t = *list_entry(e, struct sleeping_thread, elem);
+          t = *list_entry(e, struct sleeping_thread, elem);
           //printf("IF IT BREAKS HERE THEN WE KNOW WE PUT AN INCORRECT THREAD IN\n");
           //printf("DEBUG:  Checking thread '%s', thread time %i ",t.name,t.wake_time);
           //printf("current tick:  %"PRId64" \n", current_ticks);
