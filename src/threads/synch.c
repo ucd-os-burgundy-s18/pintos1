@@ -279,65 +279,42 @@ sema_test_helper(void *sema_) {
   }
 }
 
-/* DONATE NOTES
- * PRIORITY_DONATE_MULTIPLE
- * DONATIONS ARE TEMPOARY
- *
- * NEEDS TO RETURN PRIORITY TO DONATORS
- * NEED LIST OF DONERS
- * NEED POINTER TO THREAD DONATED TO
- *
- * IN CHAINS DONATIONS HAPPEN RECURSIVLY RETURNS HAPPEN IN REVERSE ORDER THEN
- * OF DONATIONS
- *
- * DONERS DONT CHANGE PRIORITY
- *
- * TAKE HIGHEST PRIORITY DONER, RETURN DONATIONS(Should be handled by the locks semaphore)
- * RETURNING IS METAPHORICAL, YOU JUST LOWER YOUR PRIORITY TO THE HIGHEST DONATION THAT REMAINS
- *
- * Possible implementation details
- * 1. A thread checks if the lock it is trying to aquire is held by a lower priority thread
- * 2. The thread will check if a thread of equal or higher priority has already donated to aquire this lock
- * 		we can do this via the lock's semaphore's waiter list, as we can assume the one that came before
- * 		also donated. if a previous doner had an equal or highet priority then us
- * 		then we do nothing and return because whoever donated begfore should resolve things
- * 		If we are the highest doner, then we add ourselves to the threads doner list
- * 3. If the lock holder is blocked, then it will get the waiting_on member of the lock holder
- * 		It will then call donate_priority(lock_holder->waiting_on,lock->holder)
- * 		this will allow chained donations
- *
- *
- *
- */
-
 /*
- * A differnt loop based implementation, because the recursive implementatiomn is uncesserly complicated
+ * How priority donation works
+ * 1. We start by looking at our current thread, and see if its waiting on a lock, and if that lock is held by
+ *    a lower priority thread.
+ * 2. If the lock holder trying to donate to has no other doners, then we simply add ourselves to the
+ *    lock holders donor list and set its priority to our own
+ * 3. If other threads have donated to the thread that was holding the lock, then we need to see
+ *    if they donated because they want to aquire the lock we are trying to aquire.
+ * 4. If no other donors exist that donated to aquire OUR lock. Then we do the same as step 2
+ *
+ * 5. If another thread has donated before us to aquire this lock, then we remove it and replace it
+ *    with our selves.(We dont have to worry about threads higher then us because we would have exited at
+ *    step 1
+ *
+ * 6. If the lock holder is blocked by another even lower priority thread then we repeat this but with the
+ *    lock holder donating to whatever it was waiting on.
+ *
  */
+void donate_priority() {
+  struct thread *cur = thread_current();
+  if (cur->waiting_on->holder == NULL) {
 
-void donate_priority(struct lock *lock) {
-
-  if (lock->holder == NULL) {
-    //printf("thread not waiting on lock\n");
     return;
   }
-  ASSERT(lock!=NULL);
-  ASSERT(lock->holder!=NULL);
+  ASSERT(cur->waiting_on!=NULL);
+  ASSERT(cur->waiting_on->holder!=NULL);
   enum intr_level old_level;
   old_level = intr_disable();
-  //printf("Starting donation\n");
-  struct thread *cur = thread_current();
+
 
   ASSERT(cur!=NULL);
   ASSERT(cur->waiting_on!=NULL);
 
-  //if (!list_empty(&cur_lock->semaphore.waiters)) {
-   // intr_set_level(old_level);
-    //return;
-  //}
+
   ASSERT(cur->waiting_on!=NULL);
-  ASSERT(cur->waiting_on==lock);
-  //We give up after 20 "recursions"
-  //printf("DEBUG:  testing '%s' priority:  %i  to  '%s' priority:  %i  \n",cur_lock->holder->name, cur_lock->holder->priority, cur->name,cur->priority);
+
 
   for (int iter = 0; iter < 20; ++iter) {
     struct list *donor_list = &cur->waiting_on->holder->donors;
@@ -345,9 +322,7 @@ void donate_priority(struct lock *lock) {
     ASSERT(donor_list != NULL);
     //If the thread we are donating to has a higher priority then us
     //we exit
-    //
-    //printf("DEBUG:  testing '%s' priority:  %i  to  '%s' priority:  %i  \n",cur_lock->holder->name, cur_lock->holder->priority, cur->name,cur->priority);
-    //ASSERT(cur->waiting_on!=NULL);
+
     if(cur->waiting_on==NULL){
       //printf("lock==null\n");
       intr_set_level(old_level);
@@ -363,7 +338,7 @@ void donate_priority(struct lock *lock) {
       return;
     }
 
-    //printf("done testing\n");
+
     if (list_empty(donor_list)) {
 
       //If the lock holder does not have any other doners
@@ -371,12 +346,12 @@ void donate_priority(struct lock *lock) {
       list_push_back(&cur->waiting_on->holder->donors, &cur->donor_elem);
       cur->waiting_on->holder->priority = cur->priority;
       if (cur->waiting_on->holder->waiting_on == NULL) {
-        //printf("exiting\n");
+
         //If the lock holder is not waiting on anything then we are done
         intr_set_level(old_level);
         return;
       }
-      //printf("done\n");
+
     } else {
 
       //otherwise we gonna get the highest doner in the lock holder's
@@ -387,10 +362,10 @@ void donate_priority(struct lock *lock) {
       struct thread *t;
       bool same_thread_donate_twice;
       int highest_shared_priority = 0;
-      //printf("DEBUG: cur name: '%s' t priority: %i \n",cur->name,cur->priority);
+
       for (e = list_begin(donor_list); e != list_end(donor_list); e = list_next(e)) {
         t = list_entry(e,struct thread, donor_elem);
-        //printf("DEBUG: t name: '%s' t priority: %i \n",t->name,t->priority);
+
         if (t->waiting_on == cur->waiting_on) {
 
           //printf("matching lock\n");
@@ -547,7 +522,7 @@ lock_acquire(struct lock *lock) {
 
     //printf("Thread: '%s' with prority %i is trying to aquire a lock\n",thread_current ()->name,thread_current()->priority);
     //printf("Checking if can donate\n");
-    donate_priority(lock);
+    donate_priority();
   }
   //thread_current()->waiting_on = lock;//We set this so if another thread donates to us, it will know that we are blocked
   intr_set_level(old_level);

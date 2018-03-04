@@ -28,18 +28,18 @@ main ()
         # alarm-zero
         # alarm-negative
 
-        # priority-change
+         #priority-change
          #priority-donate-one
          #priority-donate-multiple
          #priority-donate-multiple2
-        #priority-donate-nest
+       # priority-donate-nest
          #priority-donate-sema
-         priority-donate-lower
+         #priority-donate-lower
          #priority-fifo
          #priority-preempt
          #priority-sema
          #priority-condvar
-        # priority-donate-chain
+         priority-donate-chain
 
         # mlfqs-load-1
         # mlfqs-load-60

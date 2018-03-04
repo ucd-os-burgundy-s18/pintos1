@@ -396,12 +396,20 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
+
   int old_priority = thread_current()->priority;
-  if(thread_current()->priority<=new_priority) {
+  if(list_empty(&thread_current()->donors)) {
     thread_current()->priority = new_priority;
+    //donate_priority();
   }
+
+  /*else{
+    if(thread_current()->waiting_on!=NULL) {
+      donate_priority();
+    }
+  }*/
   thread_current()->initial_priority= new_priority;
-  if (new_priority < old_priority)
+  if (thread_current()->priority < old_priority)
   {
 
 //    printf("DEBUG:  thread_set_priority() set a lower priority; thread YIELDING \n");
