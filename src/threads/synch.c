@@ -329,17 +329,18 @@ void donate_priority(struct lock *lock) {
 
   ASSERT(cur!=NULL);
   ASSERT(cur->waiting_on!=NULL);
-  struct lock *cur_lock = lock;
+
   //if (!list_empty(&cur_lock->semaphore.waiters)) {
    // intr_set_level(old_level);
     //return;
   //}
   ASSERT(cur->waiting_on!=NULL);
+  ASSERT(cur->waiting_on==lock);
   //We give up after 20 "recursions"
   //printf("DEBUG:  testing '%s' priority:  %i  to  '%s' priority:  %i  \n",cur_lock->holder->name, cur_lock->holder->priority, cur->name,cur->priority);
 
   for (int iter = 0; iter < 20; ++iter) {
-    struct list *donor_list = &cur_lock->holder->donors;
+    struct list *donor_list = &cur->waiting_on->holder->donors;
 
     ASSERT(donor_list != NULL);
     //If the thread we are donating to has a higher priority then us
@@ -348,52 +349,56 @@ void donate_priority(struct lock *lock) {
     //printf("DEBUG:  testing '%s' priority:  %i  to  '%s' priority:  %i  \n",cur_lock->holder->name, cur_lock->holder->priority, cur->name,cur->priority);
     //ASSERT(cur->waiting_on!=NULL);
     if(cur->waiting_on==NULL){
-      printf("lock==null\n");
+      //printf("lock==null\n");
       intr_set_level(old_level);
       return;
     }
-    if (cur_lock->holder == NULL) {
-      printf("lock->holder==null\n");
+    if (cur->waiting_on->holder == NULL) {
+      //printf("lock->holder==null\n");
       intr_set_level(old_level);
       return;
     }
-    if (cur_lock->holder->priority >= cur->priority) {
+    if (cur->waiting_on->holder->priority >= cur->priority) {
       intr_set_level(old_level);
       return;
     }
 
     //printf("done testing\n");
     if (list_empty(donor_list)) {
-      printf("DEBUG:  E setting '%s' priority:  %i  to  '%s' priority:  %i  \n",cur_lock->holder->name, cur_lock->holder->priority, cur->name,cur->priority);
+
       //If the lock holder does not have any other doners
       //we just insert ourselves and continue on
-      list_push_back(&cur_lock->holder->donors, &cur->donor_elem);
-      cur_lock->holder->priority = cur->priority;
-      if (cur_lock->holder->waiting_on == NULL) {
-        printf("exiting\n");
+      list_push_back(&cur->waiting_on->holder->donors, &cur->donor_elem);
+      cur->waiting_on->holder->priority = cur->priority;
+      if (cur->waiting_on->holder->waiting_on == NULL) {
+        //printf("exiting\n");
         //If the lock holder is not waiting on anything then we are done
         intr_set_level(old_level);
         return;
       }
+      //printf("done\n");
     } else {
 
       //otherwise we gonna get the highest doner in the lock holder's
       //donor list that is also trying to aquire the same lock
       struct thread *best = NULL;
       struct list_elem *e;
-      struct list_elem *thread_to_remove;
+      struct list_elem *thread_to_remove=NULL;
       struct thread *t;
+      bool same_thread_donate_twice;
       int highest_shared_priority = 0;
+      //printf("DEBUG: cur name: '%s' t priority: %i \n",cur->name,cur->priority);
       for (e = list_begin(donor_list); e != list_end(donor_list); e = list_next(e)) {
-        t = list_entry(e,
-        struct thread, donor_elem);
+        t = list_entry(e,struct thread, donor_elem);
+        //printf("DEBUG: t name: '%s' t priority: %i \n",t->name,t->priority);
+        if (t->waiting_on == cur->waiting_on) {
 
-        if (t->waiting_on == cur_lock) {
-          ASSERT(t != cur);
-          if (((highest_shared_priority < t->priority) & t != cur))
+          //printf("matching lock\n");
+          if (((highest_shared_priority < t->priority) ))
             best = t;
-          highest_shared_priority = t->priority;
-          thread_to_remove = e;
+            //printf("DEBUG: found matching thread\n");
+            highest_shared_priority = t->priority;
+
 
         }
 
@@ -402,125 +407,45 @@ void donate_priority(struct lock *lock) {
       //and if we can "out donate it" we dont have to worry about threads that have donated to
       //aquire other locks, because if they are larger then we would have returned at line 360
       if (highest_shared_priority > 0) {
+        //printf("Other donors found\n");
+        //printf("DEBUG:  F setting '%s' priority:  %i  to  '%s' priority:  %i  \n",cur->waiting_on->holder->name,cur->waiting_on->holder->priority, cur->name,cur->priority);
         //If we have another donor compeating for the same lock we also know that they are of a lower priority
         //because we would have exited at line 360
-        list_remove(&thread_to_remove);//We remove the previous highest donor for the same lock
-        best->waiting_on = NULL;//Make sure it knows that it is no longer waiting on us
-        list_push_back(&cur_lock->holder->donors, &cur->donor_elem);//then add ourselves to the donor_list
+        //ASSERT(best->donor_elem!=NULL);
+        //list_remove(&thread_to_remove);//We remove the previous highest donor for the same lock
+        if(best!=cur) {
+          best->waiting_on = NULL;//Make sure it knows that it is no longer waiting on us
+        }
+        list_remove(&best->donor_elem);
+        list_push_back(&cur->waiting_on->holder->donors, &cur->donor_elem);//then add ourselves to the donor_list
         //We also set the priority of the lock holder to our own priority
-        cur_lock->holder->priority = cur->priority;
+        cur->waiting_on->holder->priority = cur->priority;
 
       } else {
         //printf("No other donors\n");
+        //printf("DEBUG:  G setting '%s' priority:  %i  to  '%s' priority:  %i  \n",cur->waiting_on->holder->name, cur->waiting_on->holder->priority, cur->name,cur->priority);
         //If no other donor exists that shares our same lock
-        cur_lock->holder->priority = cur->priority;//We set its priority to our own
-        list_push_back(&cur_lock->holder->donors, &cur->donor_elem);//and add our selves to the donor list
+        cur->waiting_on->holder->priority = cur->priority;//We set its priority to our own
+        list_push_back(&cur->waiting_on->holder->donors, &cur->donor_elem);//and add our selves to the donor list
 
       }
     }
 
-    cur = cur_lock->holder;
-    cur_lock = cur->waiting_on;
-    if(cur==NULL||cur_lock==NULL){
-      printf("exiting\n");
+    cur = cur->waiting_on->holder;
+
+    //cur_lock = cur->waiting_on;
+    if(cur==NULL||cur->waiting_on==NULL){
+      //printf("exiting\n");
       break;
     }
+    //printf("recursing\n");
   }
   intr_set_level(old_level);
 
-  printf("exiting\n");
+  //printf("exiting\n");
 }
-/*
-void donate_priority(struct lock *lock, struct thread *cur, int max_levels) {
-  //ASSERT(lock->holder->waiting_on != cur);
-
-  ASSERT(cur!=lock->holder);
-  //ASSERT(lock->holder->waiting_on!=lock->holder);
-  //return;
-
-  enum intr_level old_level;
-  old_level = intr_disable();
-  if (max_levels == 0 |lock==NULL| cur->waiting_on==NULL) {
-	printf("Returning\n");
-	return;
-  }
-  //printf("entered");
-  //if (!list_empty (&lock->semaphore.waiters)) {
-  if ((lock->holder != NULL)) {
-	if(lock->holder->waiting_on!=NULL){
-	  ASSERT(lock->holder->waiting_on!=lock->holder);
-	  ASSERT(lock->holder->waiting_on!=cur);
-	}
-	//printf("DONATE\n");
-	if (lock->holder->priority < cur->priority) {
-	  //printf("DEBUG:  testing '%s' priority:  %i  to  '%s' priority:  %i  \n",lock->holder->name, lock->holder->priority, cur->name,cur->priority);
-	  //struct thread* cur_thread=cur;
 
 
-	  bool changed = false;
-	  struct list_elem *e;
-	  struct list *donor_list = &lock->holder->donors;
-	  struct thread *t;
-	  struct thread *best = cur;
-	  //We go through the list and remove the doner
-	  int highest_removed_priority = cur->priority;
-
-	  for (e = list_begin(donor_list); e != list_end(donor_list); e = list_next(e)) {
-		t = list_entry(e,
-		struct thread, donor_elem);
-		if (t->waiting_on == lock) {
-		  ASSERT(t!=cur);
-		  if ((highest_removed_priority < t->priority) & t != cur)
-			best = t;
-		  	changed = true;
-		  	highest_removed_priority = t->priority;
-		}
-
-	  }
-
-	  //thread_current()->priority = highest_removed_priority;
-	  //t=list_entry(list_max(&lock->holder->donors,priority_thread_compare,NULL),struct thread, donor_elem);
-	  //t = list_entry(list_back(&lock->holder->donors),struct thread, elem);
-	  //If we dont have another doner with a larger then or equal to priority then us
-	  if (((cur->priority > highest_removed_priority)) | list_empty(donor_list)) {
-		printf("1DEBUG:  setting '%s' priority:  %i  to  '%s' priority:  %i  \n",lock->holder->name, lock->holder->priority, cur->name, cur->priority);
-
-		//save the donee thread's old priority
-		//printf("DEBUG: Donee priority saved as: %i\n",cur_thread->donee_priority);
-		//give it our priority
-		//We insert our donation into the thread we are donating to
-		//printf("DONATED\n");
-		list_push_back(&lock->holder->donors, &cur->donor_elem);
-///           list_sort(&lock->holder->donors,priority_thread_compare,NULL);
-		//list_insert_ordered(&lock->holder->donors,&cur->elem,priority_thread_compare,NULL);
-		lock->holder->priority = cur->priority;
-		//printf("SUCCESS\n");
-
-		//if the thread thats holding our lock is waiting on some other thread, we gonna tell it to donate
-		//to that thread, in a recursive call
-		if (lock->holder->waiting_on != NULL) {
-		  printf("RECURSIVE CALL with max_levels set to %i\n",max_levels-1);
-
-		  donate_priority(lock->holder->waiting_on, lock->holder, max_levels - 1);
-		  printf("DONE\n");
-		}
-
-
-	  } else {
-		//ASSERT(cur!=best);
-		printf("DEBUG: cant donate thread '%s' priority  %i is less then thread '%s' with priority %i\n", cur->name,cur->priority,best->name, best->priority);
-	  }
-
-	}
-
-
-  }
-
-  intr_set_level(old_level);
-
-
-}
-*/
 /*
  * Function called from withen lock_release, what this function does
  * is it sets its priority to that of whatever priority before the highest doner changed
@@ -537,6 +462,7 @@ void return_priority(struct lock *lock, struct thread *cur) {
 
 
   if (!list_empty(&cur->donors)) {
+    //printf("entering return");
 //printf("aaa");
 //printf("DONER LIST NOT EMPTY for thread '%s'\n", cur->name);
 
@@ -547,6 +473,7 @@ void return_priority(struct lock *lock, struct thread *cur) {
     struct list *donor_list = &cur->donors;
     struct thread *t;
 //We go through the list and remove the doner
+
     int highest_removed_priority = thread_current()->initial_priority;
     for (e = list_begin(donor_list); e != list_end(donor_list); e = list_next(e)) {
       t = list_entry(e,
@@ -555,6 +482,7 @@ void return_priority(struct lock *lock, struct thread *cur) {
 
         t->waiting_on = NULL;
         list_remove(e);
+        //printf("removed\n");
         //break;
       } else {
         if (highest_removed_priority < t->priority)
@@ -563,37 +491,9 @@ void return_priority(struct lock *lock, struct thread *cur) {
 
     }
     thread_current()->priority = highest_removed_priority;
-/*if(!list_empty(&cur->donors)){
-  //If more doners exist, then we set our current priority to the highest doner
-  struct thread *t;
-  t = list_entry(list_max(&cur->donors, priority_thread_compare, NULL),struct thread, elem);
-  if(thread_current()->initial_priority<=t->priority) {
- thread_current()->priority = t->priority;
-//	printf("Thread: '%s' set its priority to  %i after releasing a lock\n", cur->name, cur->priority);
+
+
   }
-}else{
-  //otherwise we revert to our initial priority
-
-  cur->priority = cur->initial_priority;
-
-}*/
-//printf("Thread: '%s' set its priority to  %i after releasing a lock\n",cur->name,cur->priority);
-
-
-//list_remove(&t->elem);
-//printf("aaa\n");
-
-
-  }/*else{
-    if(cur->priority!=cur->initial_priority){
-      //printf("BOGAS\n");
-      cur->priority = cur->initial_priority;
-    }
-  }*/
-
-
-
-  //printf("Done with return\n");
 }
 
 /* Initializes LOCK.  A lock can be held by at most a single
