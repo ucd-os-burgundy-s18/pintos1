@@ -397,13 +397,17 @@ void
 thread_set_priority (int new_priority)
 {
   int old_priority = thread_current()->priority;
-  thread_current()->priority = new_priority;
+  if(thread_current()->priority<=new_priority) {
+    thread_current()->priority = new_priority;
+  }
   thread_current()->initial_priority= new_priority;
   if (new_priority < old_priority)
   {
+
 //    printf("DEBUG:  thread_set_priority() set a lower priority; thread YIELDING \n");
     thread_yield();
   }
+
 }
 
 /* Returns the current thread's priority. */

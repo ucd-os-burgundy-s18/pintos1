@@ -34,12 +34,12 @@ main ()
          #priority-donate-multiple2
         #priority-donate-nest
          #priority-donate-sema
-         #priority-donate-lower
+         priority-donate-lower
          #priority-fifo
          #priority-preempt
          #priority-sema
          #priority-condvar
-         priority-donate-chain
+        # priority-donate-chain
 
         # mlfqs-load-1
         # mlfqs-load-60
