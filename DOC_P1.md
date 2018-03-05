@@ -10,7 +10,7 @@
 
 Peter Gibbs <peter.gibbs@ucdenver.edu>
 
-Brian Sumner <email address on file>
+Brian Sumner (email address on file)
 
 Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
 
@@ -168,7 +168,7 @@ We choose this design more because we struggled with priority overall, and decid
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-This was added to thread.c as a temporary variable for storing ready_threads recalculations:
+This was added to thread.c as a temporary variable for storing ready_threads recalculations: 
 static int32_t ready_threads;
 
 This was added to thread.c to store the average number of ready threads over the past minute:
@@ -242,12 +242,12 @@ the quarter.
 >> In your opinion, was this assignment, or any one of the three problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
 
-This assignment was really difficult.  It is uncertain as if it was too easy or too hard, but it definitely bordered a lot closer to the hard side of assignments we have done int he past.  It took a considerable amount of time and man hours to implement all of the three problems.  In our opinion, there should be better clarification of what the MLFQS is actually trying to do up front instead of having to wait a week or two into the assignment to find out what is expected of it.  We find that this assignment is also exceptionally difficult with only having the professor to turn to in times of need.  While Slack is great for some questions, it'd be great to have more people to be able to ask about the assignment and get help/guidance when we end up lost along the path.
+This assignment was really difficult.  It is uncertain as if it was too easy or too hard, but it definitely bordered a lot closer to the hard side of assignments we have done in the past.  It took a considerable amount of time and man hours to implement all of the three problems.  In our opinion, there should be better clarification up front of what the MLFQS is actually trying to do.  We find that this assignment is also exceptionally difficult with only having the professor to turn to in times of need since the professor's availability is very limited.  While Slack is great for some questions, it'd be great to have more people to be able to ask about the assignment and get help/guidance when we end up lost along the path.
 
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
 
-We found out that working on the regular priority scheduler ended up leaving a great deal of insight about how an OS can get locked up, stuck in busy waiting, or have problems with priority donation if not implemented properly.
+We found out that working on the regular priority scheduler ended up leaving a great deal of insight about how an OS can get locked up, stuck in busy waiting, or have problems with priority donation if not implemented properly.  In addition, implementing the MLFQS scheduler has hinted at the complexity a scheduler might use to equitably determine thread priorities and sequences of execution in an actual operating system.
 
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you
@@ -258,8 +258,8 @@ Give the hint about how priority works earlier on in development rather than lat
 >> Do you have any suggestions for the TAs to more effectively assist
 >> students, either for future quarters or the remaining projects?
 
-One suggestion for the TA is to be able to attend some class periods so that if students come for questions, the TA is understanding about what is expected from the professor rather than just going by the grading rubric.
+One suggestion for the TA is to be able to attend some class periods so that if students come for questions, the TA is understanding about what is expected from the professor rather than just going by the grading rubric.  Having a TA who has any understanding of the Pintos material would be even better.  It would be extremely advantageous for students to have at least one well-qualified TA to turn to for help implementing and debugging this project-set.
 
 >> Any other comments?
 
-Overall, this is large to do, and if teams of 2 people are having issues, then maybe the teams should be bigger. 3 seems to be a much more manageable size than just 2.  We believe that the C programming assignments are quite a giant step down from Pintos, and as such, require much less team size.  In the future, teams should be designed around the first Pintos assignment instead of the C assignments.
+Overall, this is large to do, and if teams of two people are having issues, then maybe the teams should be bigger. Three students seems to be a much more manageable group size than just two.  We believe that the C programming assignments are quite a giant step down from Pintos, and as such, do not necessarily require the same team size.  In the future, teams should be designed around the first Pintos assignment instead of the C assignments.
