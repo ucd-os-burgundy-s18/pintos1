@@ -10,7 +10,7 @@
 
 Peter Gibbs <peter.gibbs@ucdenver.edu>
 
-Brian Sumner brian . sumner (a) ucdenver . edu
+Brian Sumner <brian.sumner@ucdenver.edu>
 
 Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
 
@@ -18,6 +18,8 @@ Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
 
 >> If you have any preliminary comments on your submission, notes for the
 >> TAs, or extra credit, please give them here.
+
+The following document contains information, details and explanations of the following Pintos1 project, and code.  The following program will wake up tests, put them in priority either through the normal priority scheduler, or the MLFQS scheduler.
 
  Consulted by using the Pintos Manual and the Project1 PDF
  given to us by Ivo Georgiev
