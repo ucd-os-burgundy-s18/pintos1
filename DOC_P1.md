@@ -3,16 +3,23 @@
 			| PROJECT 1: THREADS |
 			|   DESIGN DOCUMENT  |
 			+--------------------+
-				   
+	
+	
 ---- GROUP ----
 
->> Fill in the names and email addresses of your group members.
 
-Peter Gibbs <peter.gibbs@ucdenver.edu>
+UCD-OS-BURGUNDY-S18:
 
-Brian Sumner (email address on file)
+Peter Gibbs
+Brian Sumner
+Nicolas Wilhoit
 
-Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
+
+---- REPOSITORY ----
+
+
+https://github.com/ucd-os-burgundy-s18/pintos1
+
 
 ---- PRELIMINARIES ----
 
@@ -28,18 +35,20 @@ The following document contains information, details and explanations of the fol
 			     ALARM CLOCK
 			     ===========
 
+
 ---- DATA STRUCTURES ----
+
 
 >> A1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-**struct sleeping_thread**: 
-
+__struct sleeping_thread__:
 Struct made in order to track when each thread was sleeping, and pass it along to be woken up.
  
 
 ---- ALGORITHMS ----
+
 
 >> A2: Briefly describe what happens in a call to timer_sleep(),
 >> including the effects of the timer interrupt handler.
@@ -53,21 +62,22 @@ Struct made in order to track when each thread was sleeping, and pass it along t
 >> A3: What steps are taken to minimize the amount of time spent in
 >> the timer interrupt handler?
 
-It will set the amount of ticks in timer_ticks to int64_t.  Then it will create an old_level component that will disable
-the timer interrupt. 
+It will store the amount of ticks to an int64_t variable to avoid calling timer_ticks() more than once.  Then it will create an old_level component that will disable the timer interrupt. 
  With the timer interrupt disabled, we will see if the list is empty, and if it is, we will break out and call the timer interrupt. 
  Else we will create a struct list_elem *e;  The sleeping thread list will then be put into this.  We also check to ensure we 
  put in the correct threads, so as to not run into an issue with timer_sleep.
  Next, we see if the wake.time is less than or equal to the current ticks, and if so we wake up the thread, and if not then we 
  re-enable the timer_interrupt
 
+
 ---- SYNCHRONIZATION ----
+
 
 >> A4: How are race conditions avoided when multiple threads call
 >> timer_sleep() simultaneously?
 
  Race conditions of multiple threads calling timer_sleep are prevented by giving priority to a thread and then also putting 
- it into an ordered list.  The ordered list will only pop off one thread at a time into the sleeping thread list
+ it into an ordered list.  The ordered list will only pop off one thread at a time into the sleeping thread list.
 
 >> A5: How are race conditions avoided when a timer interrupt occurs
 >> during a call to timer_sleep()?
@@ -77,7 +87,9 @@ the timer interrupt.
  This will prevent it as the list only pops one test in at a time, and ensures that the test is finished before going into the next 
  test.
 
+
 ---- RATIONALE ----
+
 
 >> A6: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
@@ -86,30 +98,32 @@ the timer interrupt.
  called and then also ensures that threads are waking up in the order of priority that they have.  It will ensure that threads
  come in priority order, and execute without delays.
 
+
 			 PRIORITY SCHEDULING
 			 ===================
 
+
 ---- DATA STRUCTURES ----
+
 
 >> B1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-**struct list_elem donor_elem**: 
-
+__struct list_elem donor_elem__: 
 Tracks the elements of the thread that is donating priority and saves the priority that is donated.
 
-**int initial_prority**:  
-
+__int initial_prority__:  
 When the thread is waiting on a lock, the lock that it is waiting on is stored here.  This is helpful if a doner thread needs to donate to a thread that is blocked due to a lock.  The donor will then force the current thread to donate its newly recieved priority to the holder of the lock.
 	 
-**struct lock* waiting_on**: 
-
+__struct lock* waiting_on__: 
 Used to store the information of the thread's previous priority.
 
-**struct list_donors**: 
-
+__struct list_donors__: 
 Holds a list of all threads that have donated priority.
+
+__int nice__:
+Added to struct thread to hold each thread's niceness value.
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
@@ -117,7 +131,9 @@ Holds a list of all threads that have donated priority.
 
 The data structure tracks down priority donation by going through each thread and checking the priority.  To ensure busy waiting is not happening, it will put it in a list that then allows prority to be traversed through each thread so that threads can execute in correct order (I.E. Threads that wake up first, are the first to execute).  After that, it will return priority as needed to threads so that the threads end up finishing in the order they need to.
 
+
 ---- ALGORITHMS ----
+
 
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
@@ -134,7 +150,9 @@ A thread will call to lock_aquire and cause itself to be locked out.  At which p
 
 When the lock_release() occurs, the higher-priority thread will immediately grab up the opportunity.  If priority donation needs to happen, it will occur before the lock releases.  Once the lock release is completed, the thread will be assumed to be finished.  If a higher-prority thread needs to use Lock_release, it will donate it's priority to the function that is blocking it, and allow itself through after that donated thread has finished.
 
+
 ---- SYNCHRONIZATION ----
+
 
 >> B6: Describe a potential race in thread_set_priority() and explain
 >> how your implementation avoids it.  Can you use a lock to avoid
@@ -142,39 +160,42 @@ When the lock_release() occurs, the higher-priority thread will immediately grab
 
 A potential race condition in thread_set_priority() is possible if two highly prioritized threads come at the same time and they end up having the same priority.  Our implementation ensures that if this scenario occurs, it will donate only one of the priority's as we have a condition ensure that the priority being donated is not of the same level as the current thread's priority.  You can use a lock to avoid this race, but you may potentially slow down the implementation of thread_set_priority if you do so.
 
+
 ---- RATIONALE ----
+
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
 
 We choose this design more because we struggled with priority overall, and decided that our original implementation was not working because we had no way to ensure that the current priority was not the same as one trying to be donated.  Once we figured that out, everything ended up working smoothly.  It is superior to the previous iterations due to the fact that it accounts for all scenarios in priority donation, and ensures that the most efficient route is taken.
 
+
 			  ADVANCED SCHEDULER
 			  ==================
 
+
 ---- DATA STRUCTURES ----
+
 
 >> C1: Copy here the declaration of each new or changed `struct' or
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-**static int32_t ready_threads**:
-
+__static int32_t ready_threads__:
 This was added to thread.c as a temporary variable for storing ready_threads recalculations: 
 
-**static fixedreal_t load_avg**:       
-
+__static fixedreal_t load_avg__:
 This was added to thread.c to store the average number of ready threads over the past minute:
 
-**fixedreal_t recent_cpu**:
-
+__fixedreal_t recent_cpu__:
 This was added to the thread struct in thread.h to store each thread's recent_cpu value:
 
-**typedef int32_t fixedreal_t;**
-
+__typedef int32_t fixedreal_t__:
 This was added to fixed-point.h to implement fixed-point numbers:
 
+
 ---- ALGORITHMS ----
+
 
 >> C2: Suppose threads A, B, and C have nice values 0, 1, and 2.  Each
 >> has a recent_cpu value of 0.  Fill in the table below showing the
@@ -208,7 +229,9 @@ It was ambiguous which thread the scheduler was supposed to choose to run next w
 
 The MLFQS-specific functions of our advanced scheduler were essentially implemented entirely within interrupt context.  At predetermined tick intervals, the timer interrupt handler calls for priority and recent_cpu values for every thread as well as system load average values to be recalculated.  The only exception is the initial priority calculation that occurs when a new thread is created, outside of interrupt context.  It stands to reason that the large volume of numerical calculations that are performed several dozen times per second, and which do not occur in the standard priority scheduler, would significantly reduce system performance versus the standard priority scheduler.  Nevertheless, these calculations are performed fairly and would likely result in a more consistent level of performance over the standard priority scheduler due to its priority donation system. 
 
+
 ---- RATIONALE ----
+
 
 >> C5: Briefly critique your design, pointing out advantages and
 >> disadvantages in your design choices.  If you were to have extra
@@ -231,6 +254,7 @@ Our first attempt at building a fixed-point type was with a struct that containe
 
 			   SURVEY QUESTIONS
 			   ================
+
 
 Answering these questions is optional, but it will help us improve the
 course in future quarters.  Feel free to tell us anything you
