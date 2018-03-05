@@ -34,12 +34,23 @@ The following document contains information, details and explanations of the fol
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
- Bool: sleeping_thread_compare: disables interupts and compares wake time and priority
+ sleeping_thread_compare: disables interupts and compares wake time and priority
 
- Static Struct: list_time_based_sleeping_thread_list: Sets up the timer to interrupt TIMER_FREQ times per second,
+ list_time_based_sleeping_thread_list: Sets up the timer to interrupt TIMER_FREQ times per second,
  and registers the corresponding interrupt
  
- void: timer_sleep(): Wakes and sleeps semaphores
+ timer_sleep(): Wakes and sleeps semaphores
+ 
+ thread_tick(): Keeps track of the number of ticks
+ 
+ thread_create(): creates threads
+ 
+ thread_yield(): disables interrupts and then puts threads in priority order
+ 
+ thread_init(): Init load_avg and recent_cpu to 0 here.
+ 
+ thread_start(): starts the thread
+ 
 
 ---- ALGORITHMS ----
 
