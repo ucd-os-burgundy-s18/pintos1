@@ -10,7 +10,7 @@
 
 Peter Gibbs <peter.gibbs@ucdenver.edu>
 
-Brian Sumner <brian.sumner@ucdenver.edu>
+Brian Sumner <email address on file>
 
 Nicolas Wilhoit <nicolas.wilhoit@ucdenver.edu>
 
@@ -168,14 +168,14 @@ We choose this design more because we struggled with priority overall, and decid
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-This was added to thread.c as a temporary variable for storing ready_threads recalculations.
-> static int32_t ready_threads;
+This was added to thread.c as a temporary variable for storing ready_threads recalculations:
+static int32_t ready_threads;
 
-This was added to thread.c to store the average number of ready threads over the past minute.
-> static fixedreal_t load_avg;            
+This was added to thread.c to store the average number of ready threads over the past minute:
+static fixedreal_t load_avg;            
 
 This was added to the thread struct to store each thread's recent_cpu value:
-> fixedreal_t recent_cpu;
+fixedreal_t recent_cpu;
 
 
 ---- ALGORITHMS ----
@@ -185,25 +185,27 @@ This was added to the thread struct to store each thread's recent_cpu value:
 >> scheduling decision and the priority and recent_cpu values for each
 >> thread after each given number of timer ticks:
 
-timer  recent_cpu    priority   thread
-ticks   A   B   C   A   B   C   to run
------  --  --  --  --  --  --   ------
- 0	
- 4
- 8
-12
-16
-20
-24
-28
-32
-36
+```
+timer  recent_cpu     priority   thread
+ticks   A   B   C    A   B   C   to run
+-----  --  --  --   --  --  --   ------
+ 0      0   0   0   31  31  31        A
+ 4      4   0   0   62  61  59        A
+ 8      8   0   0   61  61  59        B
+12      8   4   0   61  60  59        A 
+16     12   4   0   60  60  59        B
+20     12   8   0   60  59  59        A    
+24     16   8   0   59  59  59        B
+28     16  12   0   59  58  59        C
+32     16  12   4   59  58  58        A
+36     20  12   4   58  58  58        B
+```
 
 >> C3: Did any ambiguities in the scheduler specification make values
 >> in the table uncertain?  If so, what rule did you use to resolve
 >> them?  Does this match the behavior of your scheduler?
 
-
+It was ambiguous which thread the scheduler was supposed to choose to run next when a thread was already running at the highest priority, but after recalculation, that thread had the same (highest) priority as another thread.  Based on extensive debugging we determined that in this situation, our Pintos scheduler will choose the next thread on the list that also has that (highest) priority.  The table in C2 of this document was calculated given this behavior. 
 
 >> C4: How is the way you divided the cost of scheduling between code
 >> inside and outside interrupt context likely to affect performance?
