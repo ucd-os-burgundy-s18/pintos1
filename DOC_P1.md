@@ -34,7 +34,9 @@ The following document contains information, details and explanations of the fol
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-Struct sleeping_thread(): Struct made in order to track when each thread was sleeping, and pass it along to be woken up.
+**struct sleeping_thread**: 
+
+Struct made in order to track when each thread was sleeping, and pass it along to be woken up.
  
 
 ---- ALGORITHMS ----
@@ -93,16 +95,21 @@ the timer interrupt.
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-struct list_elem donor_elem: tracks the elements of the thread that is donating priority and saves the priority that is donated
+**struct list_elem donor_elem**: 
 
-int initial_prority:  When the thread is waiting on a lock, the lock that it is waiting on is stored here
-	  This is helpful if a doner thread needs to donate to a thread that is blocked due to a lock
-	  The doner will then force the current thread to donate its newly recieved priority to the
-	  holder of the lock
+Tracks the elements of the thread that is donating priority and saves the priority that is donated.
+
+**int initial_prority**:  
+
+When the thread is waiting on a lock, the lock that it is waiting on is stored here.  This is helpful if a doner thread needs to donate to a thread that is blocked due to a lock.  The donor will then force the current thread to donate its newly recieved priority to the holder of the lock.
 	 
-struct lock* waiting_on: used to store the information of the thread's previous priority
+**struct lock* waiting_on**: 
 
-struct list_donors: holds a list of all threads that have donated priority
+Used to store the information of the thread's previous priority.
+
+**struct list_donors**: 
+
+Holds a list of all threads that have donated priority.
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
@@ -151,21 +158,21 @@ We choose this design more because we struggled with priority overall, and decid
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+**static int32_t ready_threads**:
+
 This was added to thread.c as a temporary variable for storing ready_threads recalculations: 
 
-**static int32_t ready_threads;**
+**static fixedreal_t load_avg**:       
 
 This was added to thread.c to store the average number of ready threads over the past minute:
 
-**static fixedreal_t load_avg;**       
+**fixedreal_t recent_cpu**:
 
 This was added to the thread struct in thread.h to store each thread's recent_cpu value:
 
-**fixedreal_t recent_cpu;**
+**typedef int32_t fixedreal_t;**
 
 This was added to fixed-point.h to implement fixed-point numbers:
-
-**typedef int32_t fixedreal_t;**
 
 ---- ALGORITHMS ----
 
@@ -208,7 +215,7 @@ The MLFQS-specific functions of our advanced scheduler were essentially implemen
 >> time to work on this part of the project, how might you choose to
 >> refine or improve your design?
 
-
+Our main priority for implementing the MLFQS advanced scheduler was that it must satisfy all the specifications exactly, since any deviation from the specifications would likely result in failing tests.  The specifications were very precise about which functions needed which equations to run for which threads at which times.  An advantage to our design choices was that we implemented exactly what was expected and as a result, we passed all the tests.  A disadvantage to our design was that some of the specifications for the MLFQS functions were stated circuitously and it took some time for us to gain an understanding of everything required to be implemented.  Even if we had extra time to work on this part of the project, we could not dramatically improve the design since there are no specifications that we have not already satisfied exactly. 
 
 >> C6: The assignment explains arithmetic for fixed-point math in
 >> detail, but it leaves it open to you to implement it.  Why did you
@@ -217,6 +224,9 @@ The MLFQS-specific functions of our advanced scheduler were essentially implemen
 >> type and/or a set of functions or macros to manipulate fixed-point
 >> numbers, why did you do so?  If not, why not?
 
+Our fixed-point library is the result of an evolution of design choices.  While the 17.14 fixed-point system was explained in detail, we did not understand it fully at first.  The most confusing part of the manual was the statement, __"Suppose that we are using a p.q fixed-point format, and let f = 2**q"__ - we had interpreted p to mean the value of a whole number held in 17 bits and q to mean the value of the fraction held in 14 bits.  We did not realize until later that "f" is virtually never equal to 2 raised to the power of the value of the fraction; instead the "f" that is used in all of the formulas is always equal to 2**14 which is 16384.  Since we did not understand this detail at first, we attempted to implement our fixed-point system in a variety of incorrect ways in an effort to get around our inability to calculate "f". 
+
+Our first attempt at building a fixed-point type was with a struct that contained individual sign, p (whole number), and q (fraction) elements.  Then we realized that our p element encompassed our q element and were left with a struct containing sign and p elements.  After realizing the sign bit was completely unnecessary, we were left with a struct containing a single int32_t.  We then removed that int32_t from the struct to reduce the length of our debug statements and to minimize the overhead incurred from the large volume of fixed-point calculations routinely performed by the timer interrupt handler.  Next we changed the typedef of the fixed-point from int32_t to int64_t; this would guarantee a correct result without overflowing the variable no matter which order of operations were used to calculate any given formula.  Finally, we returned our fixed-point typedef back to int32_t after being informed that int64_t was not a natively-supported type and that using it would likely reduce performance - thus being counterproductive to the operation of the timer interrupt handler.
 
 
 			   SURVEY QUESTIONS
