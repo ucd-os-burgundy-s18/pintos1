@@ -97,22 +97,52 @@ the timer interrupt.
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
+priority_thread_compare is mainly used in semaphores
 
+priority_thread_compare_largest_first is used only in thread.c to resort the scheduler ready list
+
+priority_sema_compar is only used for comparing the semaphores in conditional veribles 
+
+the sema_down() is simmilar i think theres an uneccessary sort() in there, but oh well
+
+sema_up() olny gets the highest thread and wakes that up
+
+priority_donate() I tried to explain in its comments
+
+return_priority() has incorrect comments. The threads do not fight over the lock anymore, the lower priority doner is removed from within priority_donate()
+
+insted return_priority() now gets any thread that was waiting on the lock that is just about to be released, removes it and sets its waiting_on member to null it also sets the priority of the lock holder to that of either the highest priority donor that did NOT donate to aquire the lock that is about to be released, if no such donor exists it sets the holders priority to its origional priority
+
+lock_aquire() now sets the calling threads waiting_on the the current lock, and then calls priority_donate() It also has checks to abvoid this if the lock is free to aquire
+
+lock_release() now calls return_priority()
+
+cond_wait() dosent do much else
+
+cond_signal() sorts the list of waiters before waking up the highest
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
 >> .png file.)
+
+The data structure tracks down priority donation by going through each thread and checking the priority.  To ensure busy waiting is not happening, it will put it in a list that then allows prority to be traversed through each thread so that threads can execute in correct order (I.E. Threads that wake up first, are the first to execute).  After that, it will return priority as needed to threads so that the threads end up finishing in the order they need to.
 
 ---- ALGORITHMS ----
 
 >> B3: How do you ensure that the highest priority thread waiting for
 >> a lock, semaphore, or condition variable wakes up first?
 
+The highest Priority thread will wake up first because due to the algorithm set up, we have it to always pull the highest prority first, and then go through other prorities and decide if a lower priority thread needs to give up it's spot to the higher prority thread through donation.  After donation is finished, and thread has finished or not encountered busy waiting, donation will be given back unless another higher prority thread needs to execute before the lower priority thread that donation was borrowed from.
+
 >> B4: Describe the sequence of events when a call to lock_acquire()
 >> causes a priority donation.  How is nested donation handled?
 
+A thread will call to lock_aquire and cause itself to be locked out.  At which point, the prority scheduler will petition the lock to have the thread donate it's priority if a thread with higher prority comes along.  When the thread with higher prority comes along, it will donate its prority to the lower prority so that it can get into the lock_acquire() stage.  nested donation is handled the same way (so for example, if multiple high prority threads come along, they will donate the highest prority upwards and then take it back when they need to execute.
+
 >> B5: Describe the sequence of events when lock_release() is called
 >> on a lock that a higher-priority thread is waiting for.
+
+When the lock_release() occurs, the higher-priority thread will immediately grab up the opportunity.  If priority donation needs to happen, it will occur before the lock releases.  Once the lock release is completed, the thread will be assumed to be finished.  If a higher-prority thread needs to use Lock_release, it will donate it's priority to the function that is blocking it, and allow itself through after that donated thread has finished.
 
 ---- SYNCHRONIZATION ----
 
@@ -120,10 +150,14 @@ the timer interrupt.
 >> how your implementation avoids it.  Can you use a lock to avoid
 >> this race?
 
+A potential race condition in thread_set_priority() is possible if two highly prioritized threads come at the same time and they end up having the same priority.  Our implementation ensures that if this scenario occurs, it will donate only one of the priority's as we have a condition ensure that the priority being donated is not of the same level as the current thread's priority.  You can use a lock to avoid this race, but you may potentially slow down the implementation of thread_set_priority if you do so.
+
 ---- RATIONALE ----
 
 >> B7: Why did you choose this design?  In what ways is it superior to
 >> another design you considered?
+
+We choose this design more because we struggled with priority overall, and decided that our original implementation was not working because we had no way to ensure that the current priority was not the same as one trying to be donated.  Once we figured that out, everything ended up working smoothly.  It is superior to the previous iterations due to the fact that it accounts for all scenarios in priority donation, and ensures that the most efficient route is taken.
 
 			  ADVANCED SCHEDULER
 			  ==================
@@ -154,7 +188,7 @@ This was added to the thread struct to store each thread's recent_cpu value:
 timer  recent_cpu    priority   thread
 ticks   A   B   C   A   B   C   to run
 -----  --  --  --  --  --  --   ------
- 0
+ 0	
  4
  8
 12
@@ -169,8 +203,12 @@ ticks   A   B   C   A   B   C   to run
 >> in the table uncertain?  If so, what rule did you use to resolve
 >> them?  Does this match the behavior of your scheduler?
 
+
+
 >> C4: How is the way you divided the cost of scheduling between code
 >> inside and outside interrupt context likely to affect performance?
+
+We have the priority and CPU calculated inside interrupt context.
 
 ---- RATIONALE ----
 
@@ -178,6 +216,8 @@ ticks   A   B   C   A   B   C   to run
 >> disadvantages in your design choices.  If you were to have extra
 >> time to work on this part of the project, how might you choose to
 >> refine or improve your design?
+
+
 
 >> C6: The assignment explains arithmetic for fixed-point math in
 >> detail, but it leaves it open to you to implement it.  Why did you
@@ -200,18 +240,24 @@ the quarter.
 >> In your opinion, was this assignment, or any one of the three problems
 >> in it, too easy or too hard?  Did it take too long or too little time?
 
-This assignment would have been a lot easier if we had at least one competent TA to whom we could direct questions and receive helpful responses.  We would have spent a lot less time if we didn't have to wait for the instructor respond every time we needed a clarification on something.
+This assignment was really difficult.  It is uncertain as if it was too easy or too hard, but it definitely bordered a lot closer to the hard side of assignments we have done int he past.  It took a considerable amount of time and man hours to implement all of the three problems.  In our opinion, there should be better clarification of what the MLFQS is actually trying to do up front instead of having to wait a week or two into the assignment to find out what is expected of it.  We find that this assignment is also exceptionally difficult with only having the professor to turn to in times of need.  While Slack is great for some questions, it'd be great to have more people to be able to ask about the assignment and get help/guidance when we end up lost along the path.
 
 >> Did you find that working on a particular part of the assignment gave
 >> you greater insight into some aspect of OS design?
+
+We found out that working on the regular priority scheduler ended up leaving a great deal of insight about how an OS can get locked up, stuck in busy waiting, or have problems with priority donation if not implemented properly.
 
 >> Is there some particular fact or hint we should give students in
 >> future quarters to help them solve the problems?  Conversely, did you
 >> find any of our guidance to be misleading?
 
+Give the hint about how priority works earlier on in development rather than later on.  That was the single most greatest help to us in our development criteria.  Also, there should be a bigger hint about the MLFQS rather than just "google how it should be implemented".
+
 >> Do you have any suggestions for the TAs to more effectively assist
 >> students, either for future quarters or the remaining projects?
 
-In the future, there should be at least one competent TA - somebody who students can ask questions about the code and understand the questions in order to provide valuable feedback.  We had one TA and he was not capable of doing this.
+One suggestion for the TA is to be able to attend some class periods so that if students come for questions, the TA is understanding about what is expected from the professor rather than just going by the grading rubric.
 
 >> Any other comments?
+
+Overall, this is large to do, and if teams of 2 people are having issues, then maybe the teams should be bigger. 3 seems to be a much more manageable size than just 2.  We believe that the C programming assignments are quite a giant step down from Pintos, and as such, require much less team size.  In the future, teams should be designed around the first Pintos assignment instead of the C assignments.
