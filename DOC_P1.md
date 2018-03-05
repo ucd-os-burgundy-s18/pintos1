@@ -169,14 +169,20 @@ We choose this design more because we struggled with priority overall, and decid
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
 This was added to thread.c as a temporary variable for storing ready_threads recalculations: 
-static int32_t ready_threads;
+
+**static int32_t ready_threads;**
 
 This was added to thread.c to store the average number of ready threads over the past minute:
-static fixedreal_t load_avg;            
 
-This was added to the thread struct to store each thread's recent_cpu value:
-fixedreal_t recent_cpu;
+**static fixedreal_t load_avg;**       
 
+This was added to the thread struct in thread.h to store each thread's recent_cpu value:
+
+**fixedreal_t recent_cpu;**
+
+This was added to fixed-point.h to implement fixed-point numbers:
+
+**typedef int32_t fixedreal_t;**
 
 ---- ALGORITHMS ----
 
@@ -210,7 +216,7 @@ It was ambiguous which thread the scheduler was supposed to choose to run next w
 >> C4: How is the way you divided the cost of scheduling between code
 >> inside and outside interrupt context likely to affect performance?
 
-We have the priority and CPU calculated inside interrupt context.
+The MLFQS-specific functions of our advanced scheduler were essentially implemented entirely within interrupt context.  At predetermined tick intervals, the timer interrupt handler calls for priority and recent_cpu values for every thread as well as system load average values to be recalculated.  The only exception is the initial priority calculation that occurs when a new thread is created, outside of interrupt context.  It stands to reason that the large volume of numerical calculations that are performed several dozen times per second, and which do not occur in the standard priority scheduler, would significantly reduce system performance versus the standard priority scheduler.  Nevertheless, these calculations are performed fairly and would likely result in a more consistent level of performance over the standard priority scheduler due to its priority donation system. 
 
 ---- RATIONALE ----
 
