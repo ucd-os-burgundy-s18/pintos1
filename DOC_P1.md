@@ -34,22 +34,7 @@ The following document contains information, details and explanations of the fol
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
- sleeping_thread_compare: disables interupts and compares wake time and priority
-
- list_time_based_sleeping_thread_list: Sets up the timer to interrupt TIMER_FREQ times per second,
- and registers the corresponding interrupt
- 
- timer_sleep(): Wakes and sleeps semaphores
- 
- thread_tick(): Keeps track of the number of ticks
- 
- thread_create(): creates threads
- 
- thread_yield(): disables interrupts and then puts threads in priority order
- 
- thread_init(): Init load_avg and recent_cpu to 0 here.
- 
- thread_start(): starts the thread
+Struct sleeping_thread(): Struct made in order to track when each thread was sleeping, and pass it along to be woken up.
  
 
 ---- ALGORITHMS ----
@@ -108,29 +93,16 @@ the timer interrupt.
 >> `struct' member, global or static variable, `typedef', or
 >> enumeration.  Identify the purpose of each in 25 words or less.
 
-priority_thread_compare is mainly used in semaphores
+struct list_elem donor_elem: tracks the elements of the thread that is donating priority and saves the priority that is donated
 
-priority_thread_compare_largest_first is used only in thread.c to resort the scheduler ready list
+int initial_prority:  When the thread is waiting on a lock, the lock that it is waiting on is stored here
+	  This is helpful if a doner thread needs to donate to a thread that is blocked due to a lock
+	  The doner will then force the current thread to donate its newly recieved priority to the
+	  holder of the lock
+	 
+struct lock* waiting_on: used to store the information of the thread's previous priority
 
-priority_sema_compar is only used for comparing the semaphores in conditional veribles 
-
-the sema_down() is simmilar i think theres an uneccessary sort() in there, but oh well
-
-sema_up() olny gets the highest thread and wakes that up
-
-priority_donate() I tried to explain in its comments
-
-return_priority() has incorrect comments. The threads do not fight over the lock anymore, the lower priority doner is removed from within priority_donate()
-
-insted return_priority() now gets any thread that was waiting on the lock that is just about to be released, removes it and sets its waiting_on member to null it also sets the priority of the lock holder to that of either the highest priority donor that did NOT donate to aquire the lock that is about to be released, if no such donor exists it sets the holders priority to its origional priority
-
-lock_aquire() now sets the calling threads waiting_on the the current lock, and then calls priority_donate() It also has checks to abvoid this if the lock is free to aquire
-
-lock_release() now calls return_priority()
-
-cond_wait() dosent do much else
-
-cond_signal() sorts the list of waiters before waking up the highest
+struct list_donors: holds a list of all threads that have donated priority
 
 >> B2: Explain the data structure used to track priority donation.
 >> Use ASCII art to diagram a nested donation.  (Alternately, submit a
