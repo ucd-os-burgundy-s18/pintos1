@@ -1,5 +1,6 @@
 			+--------------------+
 			|      CSCI 3453     |
+			|       PINTOS:      |
 			| PROJECT 1: THREADS |
 			|   DESIGN DOCUMENT  |
 			+--------------------+
